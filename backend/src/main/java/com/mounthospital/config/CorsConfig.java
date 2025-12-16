@@ -16,7 +16,7 @@ public class CorsConfig {
         
         // Allow all origins for development (change to specific domains in production)
         config.setAllowCredentials(true);
-        config.addAllowedOrigin("http://localhost:3000");
+        config.addAllowedOrigin("http://172.31.41.234:3000");
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
         
