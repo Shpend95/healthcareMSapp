@@ -55,4 +55,35 @@ export const appointmentService = {
   delete: (id) => api.delete(`/appointments/${id}`),
 };
 
+// Test Results APIs
+export const testResultService = {
+  create: (testResultData) => api.post('/test-results', testResultData),
+  getAll: () => api.get('/test-results'),
+  getById: (id) => api.get(`/test-results/${id}`),
+  getByPatientId: (patientId) => api.get(`/test-results/patient/${patientId}`),
+  update: (id, testResultData) => api.put(`/test-results/${id}`, testResultData),
+  delete: (id) => api.delete(`/test-results/${id}`),
+};
+
+// Payment APIs
+export const paymentService = {
+  create: (paymentData) => api.post('/payments', paymentData),
+  getAll: () => api.get('/payments'),
+  getById: (id) => api.get(`/payments/${id}`),
+  getByPatientId: (patientId) => api.get(`/payments/patient/${patientId}`),
+  update: (id, paymentData) => api.put(`/payments/${id}`, paymentData),
+  delete: (id) => api.delete(`/payments/${id}`),
+};
+
+// Insurance APIs
+export const insuranceService = {
+  create: (insuranceData) => api.post('/insurance', insuranceData),
+  getAll: () => api.get('/insurance'),
+  getById: (id) => api.get(`/insurance/${id}`),
+  getByPatientId: (patientId) => api.get(`/insurance/patient/${patientId}`),
+  getCurrentByPatientId: (patientId) => api.get(`/insurance/patient/${patientId}/current`),
+  update: (id, insuranceData) => api.put(`/insurance/${id}`, insuranceData),
+  delete: (id) => api.delete(`/insurance/${id}`),
+};
+
 export default api;

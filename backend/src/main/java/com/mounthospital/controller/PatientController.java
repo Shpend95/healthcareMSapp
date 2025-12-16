@@ -4,7 +4,6 @@ import com.mounthospital.dto.ErrorResponse;
 import com.mounthospital.model.Patient;
 import com.mounthospital.repository.PatientRepository;
 import jakarta.validation.Valid;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,7 +25,6 @@ public class PatientController {
     private PatientRepository patientRepository;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN','NURSE')")
     public ResponseEntity<?> createPatient(@Valid @RequestBody Patient patient) {
         // Check if email already exists
         if (patientRepository.findByEmail(patient.getEmail()).isPresent()) {
@@ -44,14 +42,12 @@ public class PatientController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','DOCTOR','NURSE')")
     public ResponseEntity<List<Patient>> getAllPatients() {
         List<Patient> patients = patientRepository.findAll();
         return ResponseEntity.ok(patients);
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','DOCTOR','NURSE','PATIENT')")
     public ResponseEntity<?> getPatientById(@PathVariable Long id) {
         Optional<Patient> patient = patientRepository.findById(id);
         

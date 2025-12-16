@@ -6,7 +6,6 @@ import com.mounthospital.repository.AppointmentRepository;
 import com.mounthospital.repository.PatientRepository;
 import com.mounthospital.repository.DoctorRepository;
 import jakarta.validation.Valid;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,7 +33,6 @@ public class AppointmentController {
     private DoctorRepository doctorRepository;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN','DOCTOR','NURSE','PATIENT')")
     public ResponseEntity<?> createAppointment(@Valid @RequestBody Appointment appointment) {
         // Validate patient exists
         if (!patientRepository.existsById(appointment.getPatientId())) {
@@ -63,14 +61,12 @@ public class AppointmentController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','DOCTOR','NURSE')")
     public ResponseEntity<List<Appointment>> getAllAppointments() {
         List<Appointment> appointments = appointmentRepository.findAll();
         return ResponseEntity.ok(appointments);
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','DOCTOR','NURSE','PATIENT')")
     public ResponseEntity<?> getAppointmentById(@PathVariable Long id) {
         Optional<Appointment> appointment = appointmentRepository.findById(id);
         
@@ -88,14 +84,12 @@ public class AppointmentController {
     }
 
     @GetMapping("/patient/{patientId}")
-    @PreAuthorize("hasAnyRole('ADMIN','DOCTOR','NURSE','PATIENT')")
     public ResponseEntity<List<Appointment>> getAppointmentsByPatientId(@PathVariable Long patientId) {
         List<Appointment> appointments = appointmentRepository.findByPatientId(patientId);
         return ResponseEntity.ok(appointments);
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','DOCTOR','NURSE')")
     public ResponseEntity<?> updateAppointment(@PathVariable Long id, @Valid @RequestBody Appointment appointmentDetails) {
         Optional<Appointment> appointmentOptional = appointmentRepository.findById(id);
         
@@ -160,7 +154,6 @@ public class AppointmentController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','DOCTOR','NURSE')")
     public ResponseEntity<?> deleteAppointment(@PathVariable Long id) {
         Optional<Appointment> appointment = appointmentRepository.findById(id);
         
