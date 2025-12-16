@@ -1,10 +1,12 @@
--- Clear existing data
-DELETE FROM insurance;
-DELETE FROM payments;
-DELETE FROM test_results;
-DELETE FROM appointments;
-DELETE FROM patients;
-DELETE FROM doctors;
+-- Clear existing data and reset auto-increment
+SET FOREIGN_KEY_CHECKS = 0;
+TRUNCATE TABLE insurance;
+TRUNCATE TABLE payments;
+TRUNCATE TABLE test_results;
+TRUNCATE TABLE appointments;
+TRUNCATE TABLE patients;
+TRUNCATE TABLE doctors;
+SET FOREIGN_KEY_CHECKS = 1;
 
 -- Insert Doctors
 INSERT INTO doctors (name, email, phone, specialization, created_at, updated_at) VALUES
