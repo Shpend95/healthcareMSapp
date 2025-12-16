@@ -19,7 +19,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/patients")
-@CrossOrigin(origins = "http://172.31.41.234:3000")
+@CrossOrigin(origins = "*")
 public class PatientController {
 
     @Autowired
