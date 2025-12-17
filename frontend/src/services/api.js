@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { AUTH_KEY } from '../context/AuthContext';
 
-const API_BASE_URL = 'http://98.91.239.123:8081/api';
+const API_BASE_URL = 'http://3.86.71.8:8081/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
