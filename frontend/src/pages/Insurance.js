@@ -55,8 +55,11 @@ function Insurance() {
         }
       } catch (err) {
         console.error('Error finding patient:', err);
-        setError('Failed to load patient information');
+        // Don't set error state that would block the page - let user see the UI
+        const errorMessage = err.response?.data?.message || 'Failed to load patient information. Please try again.';
+        setError(errorMessage);
         setLoading(false);
+        // DON'T call logout - let user stay logged in
       }
     };
 
@@ -70,17 +73,24 @@ function Insurance() {
     const loadInsurance = async () => {
       try {
         setLoading(true);
+        setError(''); // Clear previous errors
         const [allInsuranceResponse, currentInsuranceResponse] = await Promise.all([
           insuranceService.getByPatientId(patientId),
-          insuranceService.getCurrentByPatientId(patientId).catch(() => ({ data: null }))
+          insuranceService.getCurrentByPatientId(patientId).catch((err) => {
+            // If current insurance fails, that's okay - just return null
+            console.log('No current insurance found:', err);
+            return { data: null };
+          })
         ]);
         
         setInsuranceList(allInsuranceResponse.data || []);
         setCurrentInsurance(currentInsuranceResponse.data);
-        setError('');
       } catch (err) {
         console.error('Error loading insurance:', err);
-        setError('Failed to load insurance information. Please try again.');
+        // Show error but don't block the UI - user can still add insurance
+        const errorMessage = err.response?.data?.message || 'Failed to load insurance information. Please try again.';
+        setError(errorMessage);
+        // DON'T call logout - let user stay logged in
       } finally {
         setLoading(false);
       }
@@ -140,7 +150,9 @@ function Insurance() {
       });
     } catch (err) {
       console.error('Error updating insurance:', err);
-      setError('Failed to update insurance. Please try again.');
+      const errorMessage = err.response?.data?.message || 'Failed to update insurance. Please try again.';
+      setError(errorMessage);
+      // DON'T call logout - let user stay logged in
     }
   };
 

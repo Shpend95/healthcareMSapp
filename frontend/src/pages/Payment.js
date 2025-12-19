@@ -50,8 +50,11 @@ function Payment() {
         }
       } catch (err) {
         console.error('Error finding patient:', err);
-        setError('Failed to load patient information');
+        // Don't block the page - show error but allow user to see UI
+        const errorMessage = err.response?.data?.message || 'Failed to load patient information. Please try again.';
+        setError(errorMessage);
         setLoading(false);
+        // DON'T call logout - let user stay logged in
       }
     };
 
@@ -65,14 +68,18 @@ function Payment() {
     const loadData = async () => {
       try {
         setLoading(true);
+        setError(''); // Clear previous errors
         const [paymentsResponse, insuranceResponse] = await Promise.all([
           paymentService.getByPatientId(patientId),
-          insuranceService.getCurrentByPatientId(patientId).catch(() => ({ data: null }))
+          insuranceService.getCurrentByPatientId(patientId).catch((err) => {
+            // Insurance might not exist, that's okay
+            console.log('No insurance found:', err);
+            return { data: null };
+          })
         ]);
         
         setPayments(paymentsResponse.data || []);
         setInsurance(insuranceResponse.data);
-        setError('');
         
         // Set first unpaid bill as selected
         const unpaidBill = paymentsResponse.data?.find(p => p.status !== 'COMPLETED');
@@ -81,7 +88,10 @@ function Payment() {
         }
       } catch (err) {
         console.error('Error loading payments:', err);
-        setError('Failed to load payment information. Please try again.');
+        // Show error but don't block the UI
+        const errorMessage = err.response?.data?.message || 'Failed to load payment information. Please try again.';
+        setError(errorMessage);
+        // DON'T call logout - let user stay logged in
       } finally {
         setLoading(false);
       }
@@ -129,7 +139,10 @@ function Payment() {
       setCardDetails({ cardNumber: '', cvv: '', expiry: '', nameOnCard: '' });
     } catch (err) {
       console.error('Error processing payment:', err);
-      setSuccessMessage('Failed to process payment. Please try again.');
+      const errorMessage = err.response?.data?.message || 'Failed to process payment. Please try again.';
+      setError(errorMessage);
+      setSuccessMessage('');
+      // DON'T call logout - let user stay logged in
     }
   };
 

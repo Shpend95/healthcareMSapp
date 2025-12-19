@@ -62,8 +62,11 @@ function TestResults() {
         }
       } catch (err) {
         console.error('Error finding patient:', err);
-        setError('Failed to load patient information');
+        // Don't block the page - show error but allow user to see UI
+        const errorMessage = err.response?.data?.message || 'Failed to load patient information. Please try again.';
+        setError(errorMessage);
         setLoading(false);
+        // DON'T call logout - let user stay logged in
       }
     };
 
@@ -77,12 +80,15 @@ function TestResults() {
     const loadTestResults = async () => {
       try {
         setLoading(true);
+        setError(''); // Clear previous errors
         const response = await testResultService.getByPatientId(patientId);
         setTestResults(response.data || []);
-        setError('');
       } catch (err) {
         console.error('Error loading test results:', err);
-        setError('Failed to load test results. Please try again.');
+        // Show error but don't block the UI - user can still see filters
+        const errorMessage = err.response?.data?.message || 'Failed to load test results. Please try again.';
+        setError(errorMessage);
+        // DON'T call logout - let user stay logged in
       } finally {
         setLoading(false);
       }

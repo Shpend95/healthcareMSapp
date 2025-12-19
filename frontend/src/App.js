@@ -48,11 +48,12 @@ function App() {
                   <Route element={<ProtectedRoute allowedRoles={['PATIENT']} />}>
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/dashboard/:patientId" element={<PatientDashboard />} />
-                    <Route path="/test-results" element={<TestResults />} />
-                    <Route path="/insurance" element={<Insurance />} />
-                    <Route path="/payment" element={<Payment />} />
-                    <Route path="/profile" element={<PatientProfile />} />
-                    <Route path="/appointments/schedule" element={<AppointmentScheduling />} />
+                  <Route path="/test-results" element={<TestResults />} />
+                  <Route path="/insurance" element={<Insurance />} />
+                  <Route path="/payment" element={<Payment />} />
+                  <Route path="/profile" element={<PatientProfile />} />
+                  <Route path="/patient/profile" element={<PatientProfile />} />
+                  <Route path="/appointments/schedule" element={<AppointmentScheduling />} />
                     <Route path="/health-records" element={<HealthRecordsDashboard />} />
                   </Route>
 

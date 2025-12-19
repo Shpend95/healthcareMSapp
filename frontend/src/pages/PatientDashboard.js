@@ -110,7 +110,7 @@ function PatientDashboard() {
       <div className="card" style={{ marginBottom: '2rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
           <h2 data-testid="patient-info-title">Patient Information</h2>
-          <a href="/profile" className="btn btn-primary" data-testid="view-profile-link">
+          <a href="/patient/profile" className="btn btn-primary" data-testid="view-profile-link">
             View/Edit Profile
           </a>
         </div>

@@ -53,14 +53,23 @@ api.interceptors.response.use(
         data: error.response.data,
         headers: error.response.headers
       });
-      if (status === 401 || status === 403) {
-        // Clear auth data and redirect to login
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem(AUTH_KEY);
-          sessionStorage.removeItem(AUTH_KEY);
-          // Only redirect if not already on login page
-          if (window.location.pathname !== '/login') {
-            window.location.href = '/login';
+      // Only log out on 401 (unauthorized) - this means token is invalid/missing
+      // Don't log out on 403 (forbidden) or 404 (not found) - let components handle these errors
+      if (status === 401) {
+        // Check if this is actually an authentication error, not just a resource not found
+        const errorData = error.response.data as any;
+        const errorMessage = errorData?.message || errorData?.error || '';
+        
+        // Only logout if it's clearly an auth error, not a "resource not found" type error
+        if (!errorMessage.toLowerCase().includes('not found')) {
+          // Clear auth data and redirect to login
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem(AUTH_KEY);
+            sessionStorage.removeItem(AUTH_KEY);
+            // Only redirect if not already on login page
+            if (window.location.pathname !== '/login') {
+              window.location.href = '/login';
+            }
           }
         }
       }
