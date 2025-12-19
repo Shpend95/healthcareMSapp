@@ -4,6 +4,10 @@
 
 USE mount_hospital;
 
+-- Remove UNIQUE constraint from patients.email (email should only be unique in users table)
+-- This allows multiple patients to share the same email address
+ALTER TABLE patients DROP INDEX IF EXISTS email;
+
 -- Patient Profiles Table (Extended patient information)
 CREATE TABLE IF NOT EXISTS patient_profiles (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,

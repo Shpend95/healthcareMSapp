@@ -9,7 +9,7 @@ USE mount_hospital;
 CREATE TABLE IF NOT EXISTS patients (
     id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(100) NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
+    email VARCHAR(100) NOT NULL,
     phone VARCHAR(20) NOT NULL,
     date_of_birth DATE NOT NULL,
     address VARCHAR(255) NOT NULL,
