@@ -14,6 +14,7 @@ import java.time.LocalDate;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Configuration
 public class DataInitializer {
@@ -314,17 +315,26 @@ public class DataInitializer {
         return args -> {
             List<User> allUsers = userRepository.findAll();
             int patientsCreated = 0;
-            int patientsUpdated = 0;
+            int patientsSkipped = 0;
 
             for (User user : allUsers) {
                 if (user.getRole() != Role.PATIENT) {
                     continue;
                 }
 
-                List<Patient> existingPatients = patientRepository.findByUserId(user.getId());
-                
-                if (existingPatients == null || existingPatients.isEmpty()) {
-                    // Create a patient record for this user
+                try {
+                    // Check if patient already exists for this user
+                    Optional<Patient> existingPatient = patientRepository.findByUser_Id(user.getId());
+                    
+                    if (existingPatient.isPresent()) {
+                        // Patient already exists, skip creation
+                        patientsSkipped++;
+                        log.debug("Patient record already exists for user ID {} (email: {}), skipping creation", 
+                                user.getId(), user.getEmail());
+                        continue;
+                    }
+
+                    // Patient doesn't exist, create new patient
                     Patient newPatient = new Patient(
                         user.getName(),
                         user.getEmail(),
@@ -336,20 +346,16 @@ public class DataInitializer {
                     patientRepository.save(newPatient);
                     patientsCreated++;
                     log.info("Created patient record for user ID {} (email: {})", user.getId(), user.getEmail());
-                } else {
-                    // Ensure the patient record has the correct user_id
-                    Patient existingPatient = existingPatients.get(0);
-                    if (existingPatient.getUserId() == null || !existingPatient.getUserId().equals(user.getId())) {
-                        existingPatient.setUserId(user.getId());
-                        patientRepository.save(existingPatient);
-                        patientsUpdated++;
-                        log.info("Updated patient record ID {} to link to user ID {}", existingPatient.getId(), user.getId());
-                    }
+                } catch (Exception e) {
+                    // Handle duplicates gracefully
+                    log.warn("Error processing patient record for user ID {} (email: {}): {}", 
+                            user.getId(), user.getEmail(), e.getMessage());
                 }
             }
 
-            if (patientsCreated > 0 || patientsUpdated > 0) {
-                log.info("Patient record verification completed. Created: {}, Updated: {}", patientsCreated, patientsUpdated);
+            if (patientsCreated > 0 || patientsSkipped > 0) {
+                log.info("Patient record verification completed. Created: {}, Skipped (already exist): {}", 
+                        patientsCreated, patientsSkipped);
             } else {
                 log.info("Patient record verification completed. All patient users have corresponding patient records.");
             }

@@ -22,7 +22,7 @@ public class Patient {
 
     @NotBlank(message = "Email is required")
     @Email(message = "Email should be valid")
-    @Column(nullable = false, unique = true, length = 100)
+    @Column(nullable = false, length = 100)
     private String email;
 
     @NotBlank(message = "Phone is required")
