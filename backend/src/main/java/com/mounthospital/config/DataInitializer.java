@@ -324,7 +324,7 @@ public class DataInitializer {
 
                 try {
                     // Check if patient already exists for this user
-                    Optional<Patient> existingPatient = patientRepository.findByUser_Id(user.getId());
+                    Optional<Patient> existingPatient = patientRepository.findByUserId(user.getId());
                     
                     if (existingPatient.isPresent()) {
                         // Patient already exists, skip creation

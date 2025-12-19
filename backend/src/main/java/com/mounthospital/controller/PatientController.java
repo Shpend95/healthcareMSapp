@@ -72,9 +72,9 @@ public class PatientController {
 
     @GetMapping("/user/{userId}")
     public ResponseEntity<?> getPatientByUserId(@PathVariable Long userId) {
-        List<Patient> patients = patientRepository.findByUserId(userId);
+        Optional<Patient> patientOpt = patientRepository.findByUserId(userId);
         
-        if (patients == null || patients.isEmpty()) {
+        if (patientOpt.isEmpty()) {
             ErrorResponse error = new ErrorResponse(
                 HttpStatus.NOT_FOUND.value(),
                 "Not Found",
@@ -84,18 +84,7 @@ public class PatientController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
         }
         
-        // Return the first patient if multiple exist (should typically be one)
-        Patient firstPatient = patients.get(0);
-        if (firstPatient == null) {
-            ErrorResponse error = new ErrorResponse(
-                HttpStatus.NOT_FOUND.value(),
-                "Not Found",
-                "Patient record not found for user ID " + userId + ". Please contact support.",
-                "/api/patients/user/" + userId
-            );
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
-        }
-        return ResponseEntity.ok(firstPatient);
+        return ResponseEntity.ok(patientOpt.get());
     }
 
     @PutMapping("/{id}")
