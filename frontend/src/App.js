@@ -18,6 +18,9 @@ import AdminDashboard from './pages/AdminDashboard';
 import DoctorDashboard from './pages/DoctorDashboard';
 import NurseDashboard from './pages/NurseDashboard';
 import ForbiddenPage from './pages/ForbiddenPage';
+import PatientProfile from './pages/PatientProfile';
+import AppointmentScheduling from './pages/AppointmentScheduling';
+import HealthRecordsDashboard from './pages/HealthRecordsDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
 
@@ -45,6 +48,9 @@ function App() {
                 <Route path="/test-results" element={<TestResults />} />
                 <Route path="/insurance" element={<Insurance />} />
                 <Route path="/payment" element={<Payment />} />
+                <Route path="/profile" element={<PatientProfile />} />
+                <Route path="/appointments/schedule" element={<AppointmentScheduling />} />
+                <Route path="/health-records" element={<HealthRecordsDashboard />} />
               </Route>
 
               {/* Admin, Doctor, Nurse dashboards */}
