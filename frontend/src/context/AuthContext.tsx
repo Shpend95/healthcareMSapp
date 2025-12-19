@@ -10,7 +10,25 @@ import api from '../services/api';
 export const USERS_KEY = 'mountsinai_users';
 export const AUTH_KEY = 'mountsinai_auth';
 
-const getPersistedAuth = () => {
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  token?: string;
+}
+
+interface AuthContextType {
+  user: User | null;
+  isAuthenticated: boolean;
+  initializing: boolean;
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<User>;
+  logout: () => void;
+  register: (data: { name: string; email: string; password: string; role?: string }) => User;
+  requestPasswordReset: (email: string) => boolean;
+}
+
+const getPersistedAuth = (): { token: string | null; user: User } | null => {
   const stored =
     localStorage.getItem(AUTH_KEY) || sessionStorage.getItem(AUTH_KEY);
   if (!stored) return null;
@@ -21,18 +39,18 @@ const getPersistedAuth = () => {
   }
 };
 
-const persistAuth = (data, rememberMe) => {
+const persistAuth = (data: { token: string | null; user: User }, rememberMe: boolean) => {
   const target = rememberMe ? localStorage : sessionStorage;
   const other = rememberMe ? sessionStorage : localStorage;
   other.removeItem(AUTH_KEY);
   target.setItem(AUTH_KEY, JSON.stringify(data));
 };
 
-const AuthContext = createContext(null);
+const AuthContext = createContext<AuthContextType | null>(null);
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [initializing, setInitializing] = useState(true);
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [initializing, setInitializing] = useState<boolean>(true);
 
   useEffect(() => {
     const storedAuth = getPersistedAuth();
@@ -42,26 +60,27 @@ export const AuthProvider = ({ children }) => {
     setInitializing(false);
   }, []);
 
-  const login = async (email, password, rememberMe = false) => {
+  const login = async (email: string, password: string, rememberMe: boolean = false): Promise<User> => {
     const response = await api.post('/auth/login', { email, password });
 
     const { token, user: userPayload } = response.data;
 
-    const normalizedUser = {
+    const normalizedUser: User = {
       id: userPayload.id,
       name: userPayload.name,
       email: userPayload.email,
       role: userPayload.role, // ADMIN, DOCTOR, NURSE, PATIENT
     };
 
+    console.log('Login successful - User object:', normalizedUser);
     setUser(normalizedUser);
     persistAuth({ token, user: normalizedUser }, rememberMe);
     return normalizedUser;
   };
 
   // Demo-only registration
-  const register = ({ name, email, password, role = 'PATIENT' }) => {
-    const normalizedUser = {
+  const register = ({ name, email, password, role = 'PATIENT' }: { name: string; email: string; password: string; role?: string }): User => {
+    const normalizedUser: User = {
       id: Date.now(),
       name: name.trim(),
       email: email.trim().toLowerCase(),
@@ -75,7 +94,7 @@ export const AuthProvider = ({ children }) => {
   /**
    * ADMIN-ONLY: Load users
    */
-  const loadUsers = () => {
+  const loadUsers = (): any[] => {
     if (!user || user.role !== 'ADMIN') {
       return [];
     }
@@ -88,14 +107,14 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const requestPasswordReset = (email) => {
+  const requestPasswordReset = (email: string): boolean => {
     if (!user || user.role !== 'ADMIN') {
       throw new Error('Unauthorized');
     }
 
     const users = loadUsers();
     const exists = users.some(
-      (u) => u.email.toLowerCase() === email.toLowerCase()
+      (u: any) => u.email.toLowerCase() === email.toLowerCase()
     );
 
     if (!exists) {
@@ -111,7 +130,7 @@ export const AuthProvider = ({ children }) => {
     sessionStorage.removeItem(AUTH_KEY);
   };
 
-  const value = useMemo(
+  const value = useMemo<AuthContextType>(
     () => ({
       user,
       isAuthenticated: Boolean(user),
@@ -129,7 +148,7 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-export const useAuth = () => {
+export const useAuth = (): AuthContextType => {
   const ctx = useContext(AuthContext);
   if (!ctx) {
     throw new Error('useAuth must be used within AuthProvider');

@@ -24,15 +24,21 @@ function AppointmentBooking() {
   const loadInitialData = async () => {
     try {
       setLoadingData(true);
+      console.log('AppointmentBooking: Loading doctors and patients data...');
       const [doctorsResponse, patientsResponse] = await Promise.all([
         doctorService.getAll(),
         patientService.getAll()
       ]);
+      console.log('AppointmentBooking: Doctors loaded:', doctorsResponse.data);
+      console.log('AppointmentBooking: Patients loaded:', patientsResponse.data);
       setDoctors(doctorsResponse.data);
       setPatients(patientsResponse.data);
     } catch (err) {
       setSubmitError('Failed to load data. Please try again.');
-      console.error('Error loading data:', err);
+      console.error('AppointmentBooking: Error loading data:', err);
+      if (err.response) {
+        console.error('AppointmentBooking: Error response:', err.response.status, err.response.data);
+      }
     } finally {
       setLoadingData(false);
     }

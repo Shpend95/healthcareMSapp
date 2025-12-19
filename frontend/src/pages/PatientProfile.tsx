@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth, User } from '../context/AuthContext';
 import { profileService } from '../services/api';
 import PersonalInfoSection from '../components/profile/PersonalInfoSection';
 import AddressSection from '../components/profile/AddressSection';
@@ -32,24 +32,32 @@ const PatientProfile: React.FC = () => {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>({ type: '', message: '' });
 
   const loadProfile = useCallback(async () => {
-    if (!user?.id) return;
+    if (!user || !user.id) {
+      console.log('PatientProfile: No user or user.id, skipping profile load');
+      setLoading(false);
+      return;
+    }
     
+    console.log('PatientProfile: Loading profile for user ID:', user.id);
     try {
       setLoading(true);
       const response = await profileService.getProfile(user.id);
+      console.log('PatientProfile: Profile data loaded:', response.data);
       setProfile(response.data);
       setError('');
     } catch (err: any) {
       setError('Failed to load profile. Please try again.');
-      console.error('Error loading profile:', err);
+      console.error('PatientProfile: Error loading profile:', err);
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  }, [user]);
 
   useEffect(() => {
     if (user && user.id) {
       loadProfile();
+    } else {
+      setLoading(false);
     }
   }, [user, loadProfile]);
 
@@ -135,61 +143,70 @@ const PatientProfile: React.FC = () => {
         </nav>
 
         <main className="profile-content" data-testid="profile-content">
-          {activeSection === 'personal' && (
-            <PersonalInfoSection
-              patientId={user?.id}
-              profile={profile}
-              onSave={handleSaveSuccess}
-              onError={handleSaveError}
-            />
+          {user && user.id && (
+            <>
+              {activeSection === 'personal' && (
+                <PersonalInfoSection
+                  patientId={user.id}
+                  profile={profile}
+                  onSave={handleSaveSuccess}
+                  onError={handleSaveError}
+                />
+              )}
+              {activeSection === 'address' && (
+                <AddressSection
+                  patientId={user.id}
+                  profile={profile}
+                  onSave={handleSaveSuccess}
+                  onError={handleSaveError}
+                />
+              )}
+              {activeSection === 'insurance' && (
+                <InsuranceSection
+                  patientId={user.id}
+                  profile={profile}
+                  onSave={handleSaveSuccess}
+                  onError={handleSaveError}
+                />
+              )}
+              {activeSection === 'picture' && (
+                <ProfilePictureSection
+                  patientId={user.id}
+                  profile={profile}
+                  onSave={handleSaveSuccess}
+                  onError={handleSaveError}
+                />
+              )}
+              {activeSection === 'payment' && (
+                <PaymentMethodsSection
+                  patientId={user.id}
+                  profile={profile}
+                  onSave={handleSaveSuccess}
+                  onError={handleSaveError}
+                />
+              )}
+              {activeSection === 'emergency' && (
+                <EmergencyContactsSection
+                  patientId={user.id}
+                  profile={profile}
+                  onSave={handleSaveSuccess}
+                  onError={handleSaveError}
+                />
+              )}
+              {activeSection === 'preferences' && (
+                <MedicalPreferencesSection
+                  patientId={user.id}
+                  profile={profile}
+                  onSave={handleSaveSuccess}
+                  onError={handleSaveError}
+                />
+              )}
+            </>
           )}
-          {activeSection === 'address' && (
-            <AddressSection
-              patientId={user?.id}
-              profile={profile}
-              onSave={handleSaveSuccess}
-              onError={handleSaveError}
-            />
-          )}
-          {activeSection === 'insurance' && (
-            <InsuranceSection
-              patientId={user?.id}
-              profile={profile}
-              onSave={handleSaveSuccess}
-              onError={handleSaveError}
-            />
-          )}
-          {activeSection === 'picture' && (
-            <ProfilePictureSection
-              patientId={user?.id}
-              profile={profile}
-              onSave={handleSaveSuccess}
-              onError={handleSaveError}
-            />
-          )}
-          {activeSection === 'payment' && (
-            <PaymentMethodsSection
-              patientId={user?.id}
-              profile={profile}
-              onSave={handleSaveSuccess}
-              onError={handleSaveError}
-            />
-          )}
-          {activeSection === 'emergency' && (
-            <EmergencyContactsSection
-              patientId={user?.id}
-              profile={profile}
-              onSave={handleSaveSuccess}
-              onError={handleSaveError}
-            />
-          )}
-          {activeSection === 'preferences' && (
-            <MedicalPreferencesSection
-              patientId={user?.id}
-              profile={profile}
-              onSave={handleSaveSuccess}
-              onError={handleSaveError}
-            />
+          {(!user || !user.id) && (
+            <div className="error" role="alert">
+              Please log in to view your profile.
+            </div>
           )}
         </main>
       </div>

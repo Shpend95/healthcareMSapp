@@ -22,52 +22,57 @@ import PatientProfile from './pages/PatientProfile';
 import AppointmentScheduling from './pages/AppointmentScheduling';
 import HealthRecordsDashboard from './pages/HealthRecordsDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
+import ErrorBoundary from './components/ErrorBoundary';
 import { AuthProvider } from './context/AuthContext';
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <div className="App">
-          <Navigation />
-          <main className="main-content">
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
-              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-              <Route path="/patient-registration" element={<PatientRegistration />} />
-              <Route path="/appointments" element={<AppointmentBooking />} />
-              <Route path="/doctors" element={<DoctorListing />} />
-              <Route path="/forbidden" element={<ForbiddenPage />} />
+    <ErrorBoundary>
+      <AuthProvider>
+        <Router>
+          <div className="App">
+            <Navigation />
+            <main className="main-content">
+              <ErrorBoundary>
+                <Routes>
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/register" element={<RegisterPage />} />
+                  <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                  <Route path="/patient-registration" element={<PatientRegistration />} />
+                  <Route path="/appointments" element={<AppointmentBooking />} />
+                  <Route path="/doctors" element={<DoctorListing />} />
+                  <Route path="/forbidden" element={<ForbiddenPage />} />
 
-              {/* Patient portal */}
-              <Route element={<ProtectedRoute allowedRoles={['PATIENT']} />}>
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/dashboard/:patientId" element={<PatientDashboard />} />
-                <Route path="/test-results" element={<TestResults />} />
-                <Route path="/insurance" element={<Insurance />} />
-                <Route path="/payment" element={<Payment />} />
-                <Route path="/profile" element={<PatientProfile />} />
-                <Route path="/appointments/schedule" element={<AppointmentScheduling />} />
-                <Route path="/health-records" element={<HealthRecordsDashboard />} />
-              </Route>
+                  {/* Patient portal */}
+                  <Route element={<ProtectedRoute allowedRoles={['PATIENT']} />}>
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/dashboard/:patientId" element={<PatientDashboard />} />
+                    <Route path="/test-results" element={<TestResults />} />
+                    <Route path="/insurance" element={<Insurance />} />
+                    <Route path="/payment" element={<Payment />} />
+                    <Route path="/profile" element={<PatientProfile />} />
+                    <Route path="/appointments/schedule" element={<AppointmentScheduling />} />
+                    <Route path="/health-records" element={<HealthRecordsDashboard />} />
+                  </Route>
 
-              {/* Admin, Doctor, Nurse dashboards */}
-              <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
-                <Route path="/admin" element={<AdminDashboard />} />
-              </Route>
-              <Route element={<ProtectedRoute allowedRoles={['DOCTOR']} />}>
-                <Route path="/doctor" element={<DoctorDashboard />} />
-              </Route>
-              <Route element={<ProtectedRoute allowedRoles={['NURSE']} />}>
-                <Route path="/nurse" element={<NurseDashboard />} />
-              </Route>
-            </Routes>
-          </main>
-        </div>
-      </Router>
-    </AuthProvider>
+                  {/* Admin, Doctor, Nurse dashboards */}
+                  <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
+                    <Route path="/admin" element={<AdminDashboard />} />
+                  </Route>
+                  <Route element={<ProtectedRoute allowedRoles={['DOCTOR']} />}>
+                    <Route path="/doctor" element={<DoctorDashboard />} />
+                  </Route>
+                  <Route element={<ProtectedRoute allowedRoles={['NURSE']} />}>
+                    <Route path="/nurse" element={<NurseDashboard />} />
+                  </Route>
+                </Routes>
+              </ErrorBoundary>
+            </main>
+          </div>
+        </Router>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 
