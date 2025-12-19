@@ -66,7 +66,7 @@ public class InsuranceController {
 
     @GetMapping("/patient/{patientId}")
     public ResponseEntity<List<Insurance>> getInsuranceByPatientId(@PathVariable Long patientId) {
-        List<Insurance> insuranceList = insuranceRepository.findByPatientId(patientId);
+        List<Insurance> insuranceList = insuranceRepository.findByPatient_Id(patientId);
         return ResponseEntity.ok(insuranceList);
     }
 

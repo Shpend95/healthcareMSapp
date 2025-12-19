@@ -66,7 +66,7 @@ public class TestResultController {
 
     @GetMapping("/patient/{patientId}")
     public ResponseEntity<List<TestResult>> getTestResultsByPatientId(@PathVariable Long patientId) {
-        List<TestResult> testResults = testResultRepository.findByPatientId(patientId);
+        List<TestResult> testResults = testResultRepository.findByPatient_Id(patientId);
         return ResponseEntity.ok(testResults);
     }
 

@@ -17,6 +17,11 @@ function Dashboard() {
           <h3>Quick Actions</h3>
           <ul className="quick-actions">
             <li>
+              <Link to="/profile" className="link" data-testid="quick-edit-profile">
+                Edit Profile
+              </Link>
+            </li>
+            <li>
               <Link to="/test-results" className="link" data-testid="quick-test-results">
                 View test results
               </Link>

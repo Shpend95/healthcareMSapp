@@ -66,7 +66,7 @@ public class PaymentController {
 
     @GetMapping("/patient/{patientId}")
     public ResponseEntity<List<Payment>> getPaymentsByPatientId(@PathVariable Long patientId) {
-        List<Payment> payments = paymentRepository.findByPatientId(patientId);
+        List<Payment> payments = paymentRepository.findByPatient_Id(patientId);
         return ResponseEntity.ok(payments);
     }
 

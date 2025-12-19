@@ -1,8 +1,11 @@
 package com.mounthospital.controller;
 
 import com.mounthospital.dto.ErrorResponse;
+import com.mounthospital.dto.PatientUpdateRequest;
 import com.mounthospital.model.Patient;
+import com.mounthospital.model.EmergencyContact;
 import com.mounthospital.repository.PatientRepository;
+import com.mounthospital.repository.EmergencyContactRepository;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -23,6 +26,9 @@ public class PatientController {
 
     @Autowired
     private PatientRepository patientRepository;
+
+    @Autowired
+    private EmergencyContactRepository emergencyContactRepository;
 
     @PostMapping
     public ResponseEntity<?> createPatient(@Valid @RequestBody Patient patient) {
@@ -93,7 +99,7 @@ public class PatientController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updatePatient(@PathVariable Long id, @Valid @RequestBody Patient patientDetails) {
+    public ResponseEntity<?> updatePatient(@PathVariable Long id, @RequestBody Map<String, Object> requestBody) {
         Optional<Patient> patientOptional = patientRepository.findById(id);
         
         if (patientOptional.isEmpty()) {
@@ -108,13 +114,14 @@ public class PatientController {
 
         Patient patient = patientOptional.get();
         
-        // Update fields if provided
-        if (patientDetails.getName() != null) {
-            patient.setName(patientDetails.getName());
+        // Update patient fields if provided
+        if (requestBody.containsKey("name") && requestBody.get("name") != null) {
+            patient.setName((String) requestBody.get("name"));
         }
-        if (patientDetails.getEmail() != null) {
+        if (requestBody.containsKey("email") && requestBody.get("email") != null) {
+            String email = (String) requestBody.get("email");
             // Check if email already exists (excluding current patient)
-            Optional<Patient> existingPatientOpt = patientRepository.findByEmail(patientDetails.getEmail());
+            Optional<Patient> existingPatientOpt = patientRepository.findByEmail(email);
             if (existingPatientOpt.isPresent()) {
                 Patient existingPatient = existingPatientOpt.get();
                 if (existingPatient != null && existingPatient.getId() != null && !existingPatient.getId().equals(id)) {
@@ -127,19 +134,62 @@ public class PatientController {
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
                 }
             }
-            patient.setEmail(patientDetails.getEmail());
+            patient.setEmail(email);
         }
-        if (patientDetails.getPhone() != null) {
-            patient.setPhone(patientDetails.getPhone());
+        if (requestBody.containsKey("phone") && requestBody.get("phone") != null) {
+            patient.setPhone((String) requestBody.get("phone"));
         }
-        if (patientDetails.getDateOfBirth() != null) {
-            patient.setDateOfBirth(patientDetails.getDateOfBirth());
+        if (requestBody.containsKey("dateOfBirth") && requestBody.get("dateOfBirth") != null) {
+            String dateStr = requestBody.get("dateOfBirth").toString();
+            patient.setDateOfBirth(java.time.LocalDate.parse(dateStr));
         }
-        if (patientDetails.getAddress() != null) {
-            patient.setAddress(patientDetails.getAddress());
+        if (requestBody.containsKey("address") && requestBody.get("address") != null) {
+            patient.setAddress((String) requestBody.get("address"));
         }
 
         Patient updatedPatient = patientRepository.save(patient);
+
+        // Handle emergency contact update if provided
+        if (requestBody.containsKey("emergencyContact") && requestBody.get("emergencyContact") != null) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> emergencyContactData = (Map<String, Object>) requestBody.get("emergencyContact");
+            if (emergencyContactData != null && !emergencyContactData.isEmpty()) {
+                // Get existing primary emergency contact or create new one
+                List<EmergencyContact> existingContacts = emergencyContactRepository.findByPatientIdAndIsPrimary(id, true);
+                EmergencyContact emergencyContact;
+                
+                if (!existingContacts.isEmpty()) {
+                    emergencyContact = existingContacts.get(0);
+                } else {
+                    emergencyContact = new EmergencyContact();
+                    emergencyContact.setPatientId(id);
+                    emergencyContact.setIsPrimary(true);
+                }
+                
+                // Update emergency contact fields
+                if (emergencyContactData.containsKey("firstName") && emergencyContactData.get("firstName") != null) {
+                    emergencyContact.setFirstName((String) emergencyContactData.get("firstName"));
+                }
+                if (emergencyContactData.containsKey("lastName") && emergencyContactData.get("lastName") != null) {
+                    emergencyContact.setLastName((String) emergencyContactData.get("lastName"));
+                }
+                if (emergencyContactData.containsKey("relationship") && emergencyContactData.get("relationship") != null) {
+                    emergencyContact.setRelationship((String) emergencyContactData.get("relationship"));
+                }
+                if (emergencyContactData.containsKey("primaryPhone") && emergencyContactData.get("primaryPhone") != null) {
+                    emergencyContact.setPrimaryPhone((String) emergencyContactData.get("primaryPhone"));
+                }
+                if (emergencyContactData.containsKey("secondaryPhone") && emergencyContactData.get("secondaryPhone") != null) {
+                    emergencyContact.setSecondaryPhone((String) emergencyContactData.get("secondaryPhone"));
+                }
+                if (emergencyContactData.containsKey("email") && emergencyContactData.get("email") != null) {
+                    emergencyContact.setEmail((String) emergencyContactData.get("email"));
+                }
+                
+                emergencyContactRepository.save(emergencyContact);
+            }
+        }
+
         return ResponseEntity.ok(updatedPatient);
     }
 
