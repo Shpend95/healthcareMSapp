@@ -1,11 +1,8 @@
 package com.mounthospital.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "insurance")
@@ -14,46 +11,20 @@ public class Insurance {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull(message = "Patient ID is required")
-    @Column(nullable = false, name = "patient_id")
+    @Column(name = "patient_id", nullable = false)
     private Long patientId;
 
-    @NotBlank(message = "Provider is required")
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false)
     private String provider;
 
-    @NotBlank(message = "Policy number is required")
-    @Column(nullable = false, name = "policy_number", length = 50)
+    @Column(name = "policy_number", nullable = false)
     private String policyNumber;
 
-    @NotBlank(message = "Coverage type is required")
-    @Column(nullable = false, name = "coverage_type", length = 20)
+    @Column(name = "coverage_type")
     private String coverageType;
 
-    @NotNull(message = "Expiry date is required")
-    @Column(nullable = false, name = "expiry_date")
+    @Column(name = "expiry_date")
     private LocalDate expiryDate;
-
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "patient_id", insertable = false, updatable = false, foreignKey = @ForeignKey(name = "fk_insurance_patient"))
-    private Patient patient;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 
     // Constructors
     public Insurance() {}
@@ -114,29 +85,4 @@ public class Insurance {
     public void setExpiryDate(LocalDate expiryDate) {
         this.expiryDate = expiryDate;
     }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    public Patient getPatient() {
-        return patient;
-    }
-
-    public void setPatient(Patient patient) {
-        this.patient = patient;
-    }
 }
-

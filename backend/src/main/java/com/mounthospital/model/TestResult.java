@@ -1,11 +1,8 @@
 package com.mounthospital.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "test_results")
@@ -14,45 +11,20 @@ public class TestResult {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull(message = "Patient ID is required")
-    @Column(nullable = false, name = "patient_id")
+    @Column(name = "patient_id", nullable = false)
     private Long patientId;
 
-    @NotBlank(message = "Test name is required")
-    @Column(nullable = false, name = "test_name", length = 100)
+    @Column(name = "test_name", nullable = false)
     private String testName;
 
-    @NotNull(message = "Test date is required")
-    @Column(nullable = false, name = "test_date")
+    @Column(name = "test_date", nullable = false)
     private LocalDate testDate;
 
-    @NotBlank(message = "Result is required")
-    @Column(nullable = false, length = 50)
+    @Column(columnDefinition = "TEXT")
     private String result;
 
     @Column(columnDefinition = "TEXT")
     private String notes;
-
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "patient_id", insertable = false, updatable = false, foreignKey = @ForeignKey(name = "fk_test_result_patient"))
-    private Patient patient;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 
     // Constructors
     public TestResult() {}
@@ -113,29 +85,4 @@ public class TestResult {
     public void setNotes(String notes) {
         this.notes = notes;
     }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    public Patient getPatient() {
-        return patient;
-    }
-
-    public void setPatient(Patient patient) {
-        this.patient = patient;
-    }
 }
-

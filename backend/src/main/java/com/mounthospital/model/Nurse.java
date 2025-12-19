@@ -3,8 +3,8 @@ package com.mounthospital.model;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "doctors")
-public class Doctor {
+@Table(name = "nurses")
+public class Nurse {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -19,16 +19,16 @@ public class Doctor {
     private String phone;
 
     @Column
-    private String specialization;
+    private String department;
 
     // Constructors
-    public Doctor() {}
+    public Nurse() {}
 
-    public Doctor(String name, String email, String phone, String specialization) {
+    public Nurse(String name, String email, String phone, String department) {
         this.name = name;
         this.email = email;
         this.phone = phone;
-        this.specialization = specialization;
+        this.department = department;
     }
 
     // Getters and Setters
@@ -64,11 +64,11 @@ public class Doctor {
         this.phone = phone;
     }
 
-    public String getSpecialization() {
-        return specialization;
+    public String getDepartment() {
+        return department;
     }
 
-    public void setSpecialization(String specialization) {
-        this.specialization = specialization;
+    public void setDepartment(String department) {
+        this.department = department;
     }
 }

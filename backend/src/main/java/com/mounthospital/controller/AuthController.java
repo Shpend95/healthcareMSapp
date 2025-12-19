@@ -1,92 +1,89 @@
 package com.mounthospital.controller;
 
+import com.mounthospital.dto.AuthResponse;
+import com.mounthospital.dto.ErrorResponse;
+import com.mounthospital.dto.LoginRequest;
+import com.mounthospital.dto.RegisterRequest;
+import com.mounthospital.model.Role;
 import com.mounthospital.model.User;
 import com.mounthospital.repository.UserRepository;
 import com.mounthospital.security.JwtService;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
-
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "http://localhost:3000")
 public class AuthController {
 
-    private final AuthenticationManager authenticationManager;
-    private final JwtService jwtService;
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+    @Autowired
+    private UserRepository userRepository;
 
-    public AuthController(AuthenticationManager authenticationManager,
-                          JwtService jwtService,
-                          UserRepository userRepository,
-                          PasswordEncoder passwordEncoder) {
-        this.authenticationManager = authenticationManager;
-        this.jwtService = jwtService;
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private JwtService jwtService;
+
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
+        try {
+            if (userRepository.existsByUsername(request.getUsername())) {
+                return ResponseEntity.badRequest()
+                    .body(new ErrorResponse("Username already exists"));
+            }
+
+            if (userRepository.existsByEmail(request.getEmail())) {
+                return ResponseEntity.badRequest()
+                    .body(new ErrorResponse("Email already exists"));
+            }
+
+            User user = new User();
+            user.setUsername(request.getUsername());
+            user.setEmail(request.getEmail());
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+            user.setName(request.getName());
+            user.setRole(request.getRole() != null ? request.getRole() : Role.PATIENT);
+
+            user = userRepository.save(user);
+
+            String token = jwtService.generateToken(user);
+            AuthResponse response = new AuthResponse(token, user.getId(), user.getUsername(),
+                    user.getEmail(), user.getName(), user.getRole());
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("Registration failed: " + e.getMessage()));
+        }
     }
-
-    public record LoginRequest(
-            @NotBlank @Email String email,
-            @NotBlank String password
-    ) {}
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         try {
             Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.email(), request.password())
+                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
             );
-            SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            User user = userRepository.findByEmail(request.email())
-                    .orElseThrow(() -> new BadCredentialsException("Invalid credentials"));
+            User user = (User) authentication.getPrincipal();
+            String token = jwtService.generateToken(user);
 
-            String token = jwtService.generateToken(user.getEmail(), user.getRole());
+            AuthResponse response = new AuthResponse(token, user.getId(), user.getUsername(),
+                    user.getEmail(), user.getName(), user.getRole());
 
-            return ResponseEntity.ok(Map.of(
-                    "token", token,
-                    "user", Map.of(
-                            "id", user.getId(),
-                            "name", user.getName(),
-                            "email", user.getEmail(),
-                            "role", user.getRole().name()
-                    )
-            ));
-        } catch (BadCredentialsException ex) {
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Invalid email or password"));
+                .body(new ErrorResponse("Invalid username or password"));
         }
-    }
-
-    @GetMapping("/me")
-    public ResponseEntity<?> me(Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        String email = authentication.getName();
-        User user = userRepository.findByEmail(email).orElse(null);
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        return ResponseEntity.ok(Map.of(
-                "id", user.getId(),
-                "name", user.getName(),
-                "email", user.getEmail(),
-                "role", user.getRole().name()
-        ));
     }
 }
-
-

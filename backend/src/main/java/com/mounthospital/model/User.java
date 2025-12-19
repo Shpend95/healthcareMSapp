@@ -1,82 +1,54 @@
 package com.mounthospital.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
-import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.Collections;
 
 @Entity
 @Table(name = "users")
-public class User {
-
+public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank
-    @Column(nullable = false, length = 100)
-    private String name;
-
-    @NotBlank
-    @Column(nullable = false, unique = true, length = 50)
+    @Column(unique = true, nullable = false)
     private String username;
 
-    @NotBlank
-    @Email
-    @Column(nullable = false, unique = true, length = 100)
+    @Column(unique = true, nullable = false)
     private String email;
 
-    @NotBlank
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false)
     private String password;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false)
     private Role role;
 
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    @Column(nullable = false)
+    private String name;
 
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    // Constructors
+    public User() {}
 
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
-
-    public User() {
-    }
-
-    public User(String name, String username, String email, String password, Role role) {
-        this.name = name;
+    public User(String username, String email, String password, Role role, String name) {
         this.username = username;
         this.email = email;
         this.password = password;
         this.role = role;
+        this.name = name;
     }
 
+    // Getters and Setters
     public Long getId() {
         return id;
     }
 
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public String getUsername() {
@@ -111,21 +83,37 @@ public class User {
         this.role = role;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
+    public String getName() {
+        return name;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
+    public void setName(String name) {
+        this.name = name;
     }
 
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
+    // UserDetails methods
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role.name()));
     }
 
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
     }
 }
-
-
