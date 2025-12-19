@@ -7,7 +7,7 @@ USE mount_hospital;
 -- Patient Profiles Table (Extended patient information)
 CREATE TABLE IF NOT EXISTS patient_profiles (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    patient_id INT NOT NULL,
+    patient_id BIGINT NOT NULL,
     user_id BIGINT,
     first_name VARCHAR(100),
     middle_name VARCHAR(100),
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS patient_profiles (
 -- Emergency Contacts Table
 CREATE TABLE IF NOT EXISTS emergency_contacts (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    patient_id INT NOT NULL,
+    patient_id BIGINT NOT NULL,
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
     relationship VARCHAR(50) NOT NULL,
@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS emergency_contacts (
 -- Insurance Plans Table
 CREATE TABLE IF NOT EXISTS insurance_plans (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    patient_id INT NOT NULL,
+    patient_id BIGINT NOT NULL,
     plan_type VARCHAR(20) NOT NULL DEFAULT 'PRIMARY', -- PRIMARY, SECONDARY, TERTIARY
     insurance_provider VARCHAR(200) NOT NULL,
     policy_holder_name VARCHAR(200),
@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS insurance_plans (
 -- Payment Methods Table (PCI Compliant - encrypted storage)
 CREATE TABLE IF NOT EXISTS payment_methods (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    patient_id INT NOT NULL,
+    patient_id BIGINT NOT NULL,
     method_type VARCHAR(20) NOT NULL, -- CREDIT_CARD, DEBIT_CARD, ACH, PAYPAL
     card_type VARCHAR(50), -- VISA, MASTERCARD, AMEX, etc.
     last_four_digits VARCHAR(4), -- Last 4 digits only
@@ -124,7 +124,7 @@ ADD COLUMN IF NOT EXISTS cancelled_at TIMESTAMP;
 -- Health Records Table
 CREATE TABLE IF NOT EXISTS health_records (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    patient_id INT NOT NULL,
+    patient_id BIGINT NOT NULL,
     record_type VARCHAR(50) NOT NULL, -- MEDICAL_HISTORY, LAB_RESULT, IMMUNIZATION, ALLERGY, DIAGNOSIS
     title VARCHAR(200) NOT NULL,
     description TEXT,
@@ -151,7 +151,7 @@ CREATE TABLE IF NOT EXISTS health_records (
 -- Medications Table
 CREATE TABLE IF NOT EXISTS medications (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    patient_id INT NOT NULL,
+    patient_id BIGINT NOT NULL,
     medication_name VARCHAR(200) NOT NULL,
     generic_name VARCHAR(200),
     dosage VARCHAR(100),
@@ -198,7 +198,7 @@ CREATE TABLE IF NOT EXISTS medication_reminders (
 CREATE TABLE IF NOT EXISTS audit_logs (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     user_id BIGINT,
-    patient_id INT,
+    patient_id BIGINT,
     action_type VARCHAR(50) NOT NULL, -- CREATE, READ, UPDATE, DELETE, VIEW, EXPORT
     entity_type VARCHAR(50) NOT NULL, -- PATIENT, APPOINTMENT, HEALTH_RECORD, etc.
     entity_id BIGINT,
@@ -216,7 +216,7 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 -- Patient Addresses Table (Multiple addresses support)
 CREATE TABLE IF NOT EXISTS patient_addresses (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    patient_id INT NOT NULL,
+    patient_id BIGINT NOT NULL,
     address_type VARCHAR(50) NOT NULL DEFAULT 'HOME', -- HOME, WORK, MAILING, OTHER
     address_line1 VARCHAR(255) NOT NULL,
     address_line2 VARCHAR(255),
@@ -235,7 +235,7 @@ CREATE TABLE IF NOT EXISTS patient_addresses (
 -- Payment History Table
 CREATE TABLE IF NOT EXISTS payment_history (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    patient_id INT NOT NULL,
+    patient_id BIGINT NOT NULL,
     payment_method_id BIGINT,
     amount DECIMAL(10,2) NOT NULL,
     currency VARCHAR(3) DEFAULT 'USD',

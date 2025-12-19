@@ -1,5 +1,6 @@
 package com.mounthospital.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mounthospital.dto.ErrorResponse;
 import com.mounthospital.model.*;
 import com.mounthospital.repository.*;
@@ -34,6 +35,9 @@ public class ProfileController {
 
     @Autowired
     private PatientRepository patientRepository;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     // ========== Patient Profile Endpoints ==========
 
@@ -220,9 +224,19 @@ public class ProfileController {
                 profile.setPatientId(patientId);
             }
             
-            // Convert preferences map to JSON string
-            // In production, use a JSON library like Jackson ObjectMapper
-            profile.setCommunicationPreferences(preferences.toString());
+            // Convert preferences map to JSON string using Jackson ObjectMapper
+            try {
+                String jsonPreferences = objectMapper.writeValueAsString(preferences);
+                profile.setCommunicationPreferences(jsonPreferences);
+            } catch (Exception jsonException) {
+                ErrorResponse error = new ErrorResponse(
+                    HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                    "Internal Server Error",
+                    "Failed to serialize preferences: " + jsonException.getMessage(),
+                    "/api/profile/patient/" + patientId + "/preferences"
+                );
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+            }
             
             PatientProfile saved = patientProfileRepository.save(profile);
             return ResponseEntity.ok(saved);
@@ -242,9 +256,21 @@ public class ProfileController {
         try {
             Optional<PatientProfile> profileOpt = patientProfileRepository.findByPatientId(patientId);
             if (profileOpt.isPresent() && profileOpt.get().getCommunicationPreferences() != null) {
-                Map<String, Object> response = new HashMap<>();
-                response.put("preferences", profileOpt.get().getCommunicationPreferences());
-                return ResponseEntity.ok(response);
+                // Deserialize JSON string back to Map
+                try {
+                    Map<String, Object> preferences = objectMapper.readValue(
+                        profileOpt.get().getCommunicationPreferences(),
+                        Map.class
+                    );
+                    Map<String, Object> response = new HashMap<>();
+                    response.put("preferences", preferences);
+                    return ResponseEntity.ok(response);
+                } catch (Exception jsonException) {
+                    // If deserialization fails, return the raw string (for backward compatibility)
+                    Map<String, Object> response = new HashMap<>();
+                    response.put("preferences", profileOpt.get().getCommunicationPreferences());
+                    return ResponseEntity.ok(response);
+                }
             } else {
                 return ResponseEntity.ok(new HashMap<>());
             }
