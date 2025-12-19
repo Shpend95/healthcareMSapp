@@ -4,13 +4,21 @@ import java.time.LocalDateTime;
 
 public class ErrorResponse {
     private LocalDateTime timestamp;
-    private String message;
     private int status;
+    private String error;
+    private String message;
+    private String path;
     
-    public ErrorResponse(String message, int status) {
+    public ErrorResponse() {
         this.timestamp = LocalDateTime.now();
-        this.message = message;
+    }
+    
+    public ErrorResponse(int status, String error, String message, String path) {
+        this.timestamp = LocalDateTime.now();
         this.status = status;
+        this.error = error;
+        this.message = message;
+        this.path = path;
     }
     
     public LocalDateTime getTimestamp() {
@@ -21,6 +29,22 @@ public class ErrorResponse {
         this.timestamp = timestamp;
     }
     
+    public int getStatus() {
+        return status;
+    }
+    
+    public void setStatus(int status) {
+        this.status = status;
+    }
+    
+    public String getError() {
+        return error;
+    }
+    
+    public void setError(String error) {
+        this.error = error;
+    }
+    
     public String getMessage() {
         return message;
     }
@@ -29,11 +53,11 @@ public class ErrorResponse {
         this.message = message;
     }
     
-    public int getStatus() {
-        return status;
+    public String getPath() {
+        return path;
     }
     
-    public void setStatus(int status) {
-        this.status = status;
+    public void setPath(String path) {
+        this.path = path;
     }
 }

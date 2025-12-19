@@ -10,4 +10,5 @@ import java.util.Optional;
 public interface InsuranceRepository extends JpaRepository<Insurance, Long> {
     List<Insurance> findByPatientId(Long patientId);
     Optional<Insurance> findByPatientIdAndPolicyNumber(Long patientId, String policyNumber);
+    Optional<Insurance> findFirstByPatientIdOrderByExpiryDateDesc(Long patientId);
 }
