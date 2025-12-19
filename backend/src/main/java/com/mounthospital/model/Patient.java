@@ -38,6 +38,9 @@ public class Patient {
     @Column(nullable = false, length = 255)
     private String address;
 
+    @Column(name = "user_id")
+    private Long userId;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -64,6 +67,15 @@ public class Patient {
         this.phone = phone;
         this.dateOfBirth = dateOfBirth;
         this.address = address;
+    }
+
+    public Patient(String name, String email, String phone, LocalDate dateOfBirth, String address, Long userId) {
+        this.name = name;
+        this.email = email;
+        this.phone = phone;
+        this.dateOfBirth = dateOfBirth;
+        this.address = address;
+        this.userId = userId;
     }
 
     // Getters and Setters
@@ -113,6 +125,14 @@ public class Patient {
 
     public void setAddress(String address) {
         this.address = address;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 
     public LocalDateTime getCreatedAt() {

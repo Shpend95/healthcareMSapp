@@ -15,11 +15,11 @@ public class Appointment {
     private Long id;
 
     @NotNull(message = "Patient ID is required")
-    @Column(nullable = false, name = "patient_id")
+    @Column(nullable = false, name = "patient_id", insertable = true, updatable = true)
     private Long patientId;
 
     @NotNull(message = "Doctor ID is required")
-    @Column(nullable = false, name = "doctor_id")
+    @Column(nullable = false, name = "doctor_id", insertable = true, updatable = true)
     private Long doctorId;
 
     @NotNull(message = "Appointment date is required")
@@ -43,11 +43,11 @@ public class Appointment {
     private LocalDateTime updatedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "patient_id", insertable = false, updatable = false)
+    @JoinColumn(name = "patient_id", insertable = false, updatable = false, foreignKey = @ForeignKey(name = "fk_appointment_patient"))
     private Patient patient;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "doctor_id", insertable = false, updatable = false)
+    @JoinColumn(name = "doctor_id", insertable = false, updatable = false, foreignKey = @ForeignKey(name = "fk_appointment_doctor"))
     private Doctor doctor;
 
     @PrePersist

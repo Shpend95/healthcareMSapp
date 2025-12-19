@@ -40,7 +40,7 @@ public class TestResult {
     private LocalDateTime updatedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "patient_id", insertable = false, updatable = false)
+    @JoinColumn(name = "patient_id", insertable = false, updatable = false, foreignKey = @ForeignKey(name = "fk_test_result_patient"))
     private Patient patient;
 
     @PrePersist
