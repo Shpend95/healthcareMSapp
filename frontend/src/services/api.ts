@@ -1,7 +1,7 @@
 import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import { AUTH_KEY } from '../context/AuthContext';
 
-const API_BASE_URL = 'http://localhost:8080/api';
+const API_BASE_URL = 'http://localhost:8081/api';
 
 const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -27,23 +27,32 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
       }
     }
   }
-  console.log(`API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+  const fullUrl = `${config.baseURL}${config.url}`;
+  console.log(`[API Request] ${config.method?.toUpperCase()} ${fullUrl}`, config.data || '');
   return config;
 });
 
 // Handle 401/403 errors - redirect to login
 api.interceptors.response.use(
   (response) => {
-    console.log(`API Response: ${response.config.method?.toUpperCase()} ${response.config.url} - Status: ${response.status}`);
+    const fullUrl = `${response.config.baseURL}${response.config.url}`;
+    console.log(`[API Response] ${response.config.method?.toUpperCase()} ${fullUrl} - Status: ${response.status}`);
     if (response.data) {
-      console.log('API Response Data:', response.data);
+      console.log('[API Response Data]', response.data);
     }
     return response;
   },
   (error: AxiosError) => {
     if (error.response) {
       const status = error.response.status;
-      console.error(`API Error: ${error.config?.method?.toUpperCase()} ${error.config?.url} - Status: ${status}`, error.response.data);
+      const fullUrl = error.config ? `${error.config.baseURL}${error.config.url}` : 'unknown';
+      console.error(`[API Error] ${error.config?.method?.toUpperCase()} ${fullUrl} - Status: ${status}`);
+      console.error('[API Error Details]', {
+        status,
+        statusText: error.response.statusText,
+        data: error.response.data,
+        headers: error.response.headers
+      });
       if (status === 401 || status === 403) {
         // Clear auth data and redirect to login
         if (typeof window !== 'undefined') {
@@ -55,8 +64,20 @@ api.interceptors.response.use(
           }
         }
       }
+    } else if (error.request) {
+      console.error('[API Error] No response received from server:', {
+        url: error.config?.url,
+        method: error.config?.method,
+        message: error.message,
+        code: error.code
+      });
+      console.error('[API Error] This usually means:', {
+        'Backend not running?': 'Check if backend is running on http://localhost:8081',
+        'CORS issue?': 'Check browser console for CORS errors',
+        'Network issue?': 'Check your internet connection'
+      });
     } else {
-      console.error('API Error (no response):', error.message);
+      console.error('[API Error] Request setup error:', error.message);
     }
     return Promise.reject(error);
   }

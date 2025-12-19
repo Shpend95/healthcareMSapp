@@ -24,21 +24,49 @@ function AppointmentBooking() {
   const loadInitialData = async () => {
     try {
       setLoadingData(true);
-      console.log('AppointmentBooking: Loading doctors and patients data...');
+      console.log('[AppointmentBooking] Loading doctors and patients data...');
       const [doctorsResponse, patientsResponse] = await Promise.all([
         doctorService.getAll(),
         patientService.getAll()
       ]);
-      console.log('AppointmentBooking: Doctors loaded:', doctorsResponse.data);
-      console.log('AppointmentBooking: Patients loaded:', patientsResponse.data);
-      setDoctors(doctorsResponse.data);
-      setPatients(patientsResponse.data);
-    } catch (err) {
-      setSubmitError('Failed to load data. Please try again.');
-      console.error('AppointmentBooking: Error loading data:', err);
-      if (err.response) {
-        console.error('AppointmentBooking: Error response:', err.response.status, err.response.data);
+      console.log('[AppointmentBooking] Doctors loaded:', doctorsResponse.data);
+      console.log('[AppointmentBooking] Patients loaded:', patientsResponse.data);
+      
+      if (!doctorsResponse.data || doctorsResponse.data.length === 0) {
+        console.warn('[AppointmentBooking] No doctors found in response');
       }
+      if (!patientsResponse.data || patientsResponse.data.length === 0) {
+        console.warn('[AppointmentBooking] No patients found in response');
+      }
+      
+      setDoctors(doctorsResponse.data || []);
+      setPatients(patientsResponse.data || []);
+    } catch (err) {
+      let errorMessage = 'Failed to load data. Please try again.';
+      
+      if (err.response) {
+        // Server responded with error
+        errorMessage = `Failed to load data: ${err.response.status} ${err.response.statusText}`;
+        if (err.response.data?.message) {
+          errorMessage += ` - ${err.response.data.message}`;
+        }
+        console.error('[AppointmentBooking] Error response:', {
+          status: err.response.status,
+          statusText: err.response.statusText,
+          data: err.response.data
+        });
+      } else if (err.request) {
+        // Request made but no response
+        errorMessage = 'Failed to connect to backend server. Please ensure the backend is running on http://localhost:8081';
+        console.error('[AppointmentBooking] No response from server:', err.request);
+      } else {
+        // Error setting up request
+        errorMessage = `Error: ${err.message}`;
+        console.error('[AppointmentBooking] Request setup error:', err);
+      }
+      
+      setSubmitError(errorMessage);
+      console.error('[AppointmentBooking] Full error details:', err);
     } finally {
       setLoadingData(false);
     }

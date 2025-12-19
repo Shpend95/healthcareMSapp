@@ -1,4 +1,6 @@
 -- Clear existing data and reset auto-increment
+-- Note: TRUNCATE commands may fail on first run if tables don't exist yet
+-- but continue-on-error=true in application.properties allows the script to continue
 SET FOREIGN_KEY_CHECKS = 0;
 TRUNCATE TABLE insurance;
 TRUNCATE TABLE payments;

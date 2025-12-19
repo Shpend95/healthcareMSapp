@@ -61,21 +61,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async (email: string, password: string, rememberMe: boolean = false): Promise<User> => {
-    const response = await api.post('/auth/login', { email, password });
+    try {
+      console.log('[AuthContext] Attempting login for:', email);
+      const response = await api.post('/auth/login', { email, password });
 
-    const { token, user: userPayload } = response.data;
+      const { token, user: userPayload } = response.data;
 
-    const normalizedUser: User = {
-      id: userPayload.id,
-      name: userPayload.name,
-      email: userPayload.email,
-      role: userPayload.role, // ADMIN, DOCTOR, NURSE, PATIENT
-    };
+      if (!token || !userPayload) {
+        throw new Error('Invalid response from server: missing token or user data');
+      }
 
-    console.log('Login successful - User object:', normalizedUser);
-    setUser(normalizedUser);
-    persistAuth({ token, user: normalizedUser }, rememberMe);
-    return normalizedUser;
+      const normalizedUser: User = {
+        id: userPayload.id,
+        name: userPayload.name,
+        email: userPayload.email,
+        role: userPayload.role, // ADMIN, DOCTOR, NURSE, PATIENT
+      };
+
+      console.log('[AuthContext] Login successful - User object:', normalizedUser);
+      setUser(normalizedUser);
+      persistAuth({ token, user: normalizedUser }, rememberMe);
+      return normalizedUser;
+    } catch (error: any) {
+      console.error('[AuthContext] Login error:', error);
+      if (error.response) {
+        // Server responded with error
+        const message = error.response.data?.message || `Login failed: ${error.response.status} ${error.response.statusText}`;
+        throw new Error(message);
+      } else if (error.request) {
+        // Request made but no response
+        throw new Error('Cannot connect to server. Please ensure the backend is running on http://localhost:8081');
+      } else {
+        // Error setting up request
+        throw new Error(error.message || 'Login failed. Please try again.');
+      }
+    }
   };
 
   // Demo-only registration
