@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import Navigation from '../components/Navigation';
 
 interface Patient {
   id: number;
@@ -54,8 +55,6 @@ interface Payment {
 interface Doctor {
   id: number;
   name: string;
-  email: string;
-  phone: string;
   specialization: string;
 }
 
@@ -69,386 +68,372 @@ const PatientDashboard: React.FC = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  const [editProfile, setEditProfile] = useState(false);
-  const [profileData, setProfileData] = useState<Partial<Patient>>({});
-
-  const [newAppointment, setNewAppointment] = useState({
-    doctorId: '',
-    appointmentDate: '',
-    appointmentTime: '',
-    notes: '',
-  });
+  const [editing, setEditing] = useState(false);
+  const [editForm, setEditForm] = useState<Partial<Patient>>({});
 
   useEffect(() => {
     if (user) {
-      fetchData();
+      fetchPatientData();
+      fetchDoctors();
     }
   }, [user]);
 
-  const fetchData = async () => {
-    if (!user) return;
-    
+  const fetchPatientData = async () => {
     try {
       setLoading(true);
-      // Fetch patient by userId
-      const patientRes = await api.get(`/patients/user/${user.id}`);
-      const patientData = patientRes.data;
-      setPatient(patientData);
-      setProfileData(patientData);
+      const patientRes = await api.get(`/patients/user/${user?.id}`);
+      setPatient(patientRes.data);
+      setEditForm(patientRes.data);
 
-      // Fetch related data
-      const [apptsRes, testRes, insRes, payRes, docsRes] = await Promise.all([
-        api.get(`/appointments/patient/${patientData.id}`),
-        api.get(`/test-results/patient/${patientData.id}`),
-        api.get(`/insurance/patient/${patientData.id}`),
-        api.get(`/payments/patient/${patientData.id}`),
-        api.get('/doctors'),
+      const patientId = patientRes.data.id;
+      const [apptsRes, testsRes, insRes, paysRes] = await Promise.all([
+        api.get(`/appointments/patient/${patientId}`),
+        api.get(`/test-results/patient/${patientId}`),
+        api.get(`/insurance/patient/${patientId}`),
+        api.get(`/payments/patient/${patientId}`),
       ]);
 
-      setAppointments(apptsRes.data || []);
-      setTestResults(testRes.data || []);
-      setInsurance(insRes.data || []);
-      setPayments(payRes.data || []);
-      setDoctors(docsRes.data || []);
-    } catch (err: any) {
-      if (err.response?.status === 404) {
-        // Patient doesn't exist yet, create one
-        try {
-          const newPatient = {
-            userId: user.id,
-            name: user.name,
-            email: user.email,
-            phone: '',
-            address: '',
-            dateOfBirth: '',
-            bloodGroup: '',
-            emergencyContact: '',
-          };
-          const createRes = await api.post('/patients', newPatient);
-          setPatient(createRes.data);
-          setProfileData(createRes.data);
-        } catch (createErr) {
-          setError('Failed to create patient profile');
-        }
-      } else {
-        setError('Failed to load data');
-      }
+      setAppointments(apptsRes.data);
+      setTestResults(testsRes.data);
+      setInsurance(insRes.data);
+      setPayments(paysRes.data);
+    } catch (error) {
+      console.error('Error fetching patient data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchDoctors = async () => {
+    try {
+      const res = await api.get('/doctors');
+      setDoctors(res.data);
+    } catch (error) {
+      console.error('Error fetching doctors:', error);
     }
   };
 
   const handleUpdateProfile = async () => {
     if (!patient) return;
     try {
-      const res = await api.put(`/patients/${patient.id}`, profileData);
-      setPatient(res.data);
-      setEditProfile(false);
-      setError('');
-    } catch (err: any) {
-      setError('Failed to update profile');
+      await api.put(`/patients/${patient.id}`, editForm);
+      setPatient({ ...patient, ...editForm });
+      setEditing(false);
+      alert('Profile updated successfully!');
+    } catch (error) {
+      alert('Failed to update profile');
     }
   };
 
-  const handleBookAppointment = async () => {
+  const handleBookAppointment = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     if (!patient) return;
+    const formData = new FormData(e.currentTarget);
     try {
       await api.post('/appointments', {
         patientId: patient.id,
-        doctorId: parseInt(newAppointment.doctorId),
-        appointmentDate: newAppointment.appointmentDate,
-        appointmentTime: newAppointment.appointmentTime,
+        doctorId: parseInt(formData.get('doctorId') as string),
+        appointmentDate: formData.get('appointmentDate'),
+        appointmentTime: formData.get('appointmentTime'),
         status: 'SCHEDULED',
-        notes: newAppointment.notes,
+        notes: formData.get('notes') || '',
       });
-      setNewAppointment({ doctorId: '', appointmentDate: '', appointmentTime: '', notes: '' });
-      fetchData();
-      setError('');
-    } catch (err: any) {
-      setError('Failed to book appointment');
+      alert('Appointment booked successfully!');
+      fetchPatientData();
+      (e.target as HTMLFormElement).reset();
+    } catch (error) {
+      alert('Failed to book appointment');
     }
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Loading...</div>
+      <div className="min-h-screen bg-gray-100">
+        <Navigation />
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">Loading...</div>
+        </div>
       </div>
     );
   }
 
   if (!patient) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg text-red-600">Failed to load patient data</div>
+      <div className="min-h-screen bg-gray-100">
+        <Navigation />
+        <div className="container mx-auto px-4 py-8">
+          <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded">
+            Patient profile not found. Please contact administrator.
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">Patient Dashboard</h1>
+    <div className="min-h-screen bg-gray-100">
+      <Navigation />
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold mb-6">Patient Dashboard</h1>
 
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
-        </div>
-      )}
-
-      <div className="bg-white shadow rounded-lg">
-        <div className="border-b border-gray-200">
-          <nav className="flex -mb-px">
-            {['profile', 'appointments', 'test-results', 'insurance', 'payments'].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`py-4 px-6 text-sm font-medium ${
-                  activeTab === tab
-                    ? 'border-b-2 border-blue-500 text-blue-600'
-                    : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                {tab.charAt(0).toUpperCase() + tab.slice(1).replace('-', ' ')}
-              </button>
-            ))}
-          </nav>
-        </div>
-
-        <div className="p-6">
-          {activeTab === 'profile' && (
-            <div>
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-semibold">My Profile</h2>
+        <div className="bg-white rounded-lg shadow-md mb-6">
+          <div className="border-b border-gray-200">
+            <nav className="flex -mb-px">
+              {['profile', 'appointments', 'test-results', 'insurance', 'payments'].map((tab) => (
                 <button
-                  onClick={() => editProfile ? handleUpdateProfile() : setEditProfile(true)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-6 py-3 font-medium text-sm ${
+                    activeTab === tab
+                      ? 'border-b-2 border-blue-500 text-blue-600'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
                 >
-                  {editProfile ? 'Save' : 'Edit'}
+                  {tab.charAt(0).toUpperCase() + tab.slice(1).replace('-', ' ')}
                 </button>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Name</label>
-                  <input
-                    type="text"
-                    value={profileData.name || ''}
-                    onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
-                    disabled={!editProfile}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Email</label>
-                  <input
-                    type="email"
-                    value={profileData.email || ''}
-                    onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
-                    disabled={!editProfile}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Phone</label>
-                  <input
-                    type="text"
-                    value={profileData.phone || ''}
-                    onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
-                    disabled={!editProfile}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Date of Birth</label>
-                  <input
-                    type="date"
-                    value={profileData.dateOfBirth || ''}
-                    onChange={(e) => setProfileData({ ...profileData, dateOfBirth: e.target.value })}
-                    disabled={!editProfile}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Blood Group</label>
-                  <input
-                    type="text"
-                    value={profileData.bloodGroup || ''}
-                    onChange={(e) => setProfileData({ ...profileData, bloodGroup: e.target.value })}
-                    disabled={!editProfile}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Address</label>
-                  <input
-                    type="text"
-                    value={profileData.address || ''}
-                    onChange={(e) => setProfileData({ ...profileData, address: e.target.value })}
-                    disabled={!editProfile}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                  />
-                </div>
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700">Emergency Contact</label>
-                  <input
-                    type="text"
-                    value={profileData.emergencyContact || ''}
-                    onChange={(e) => setProfileData({ ...profileData, emergencyContact: e.target.value })}
-                    disabled={!editProfile}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
+              ))}
+            </nav>
+          </div>
 
-          {activeTab === 'appointments' && (
-            <div>
-              <h2 className="text-2xl font-semibold mb-4">My Appointments</h2>
-              
-              <div className="mb-6 bg-gray-50 p-4 rounded">
-                <h3 className="font-semibold mb-3">Book New Appointment</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Doctor</label>
-                    <select
-                      value={newAppointment.doctorId}
-                      onChange={(e) => setNewAppointment({ ...newAppointment, doctorId: e.target.value })}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                    >
-                      <option value="">Select Doctor</option>
-                      {doctors.map((doc) => (
-                        <option key={doc.id} value={doc.id}>
-                          {doc.name} - {doc.specialization}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Date</label>
-                    <input
-                      type="date"
-                      value={newAppointment.appointmentDate}
-                      onChange={(e) => setNewAppointment({ ...newAppointment, appointmentDate: e.target.value })}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Time</label>
-                    <input
-                      type="time"
-                      value={newAppointment.appointmentTime}
-                      onChange={(e) => setNewAppointment({ ...newAppointment, appointmentTime: e.target.value })}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Notes</label>
-                    <input
-                      type="text"
-                      value={newAppointment.notes}
-                      onChange={(e) => setNewAppointment({ ...newAppointment, notes: e.target.value })}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                    />
-                  </div>
+          <div className="p-6">
+            {activeTab === 'profile' && (
+              <div>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-2xl font-semibold">Profile</h2>
+                  <button
+                    onClick={() => editing ? handleUpdateProfile() : setEditing(true)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+                  >
+                    {editing ? 'Save' : 'Edit'}
+                  </button>
                 </div>
-                <button
-                  onClick={handleBookAppointment}
-                  className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-                >
-                  Book Appointment
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                {appointments.length === 0 ? (
-                  <p className="text-gray-500">No appointments found</p>
+                {editing ? (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Name</label>
+                      <input
+                        type="text"
+                        value={editForm.name || ''}
+                        onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Email</label>
+                      <input
+                        type="email"
+                        value={editForm.email || ''}
+                        onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Phone</label>
+                      <input
+                        type="text"
+                        value={editForm.phone || ''}
+                        onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Address</label>
+                      <input
+                        type="text"
+                        value={editForm.address || ''}
+                        onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Blood Group</label>
+                      <input
+                        type="text"
+                        value={editForm.bloodGroup || ''}
+                        onChange={(e) => setEditForm({ ...editForm, bloodGroup: e.target.value })}
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Emergency Contact</label>
+                      <input
+                        type="text"
+                        value={editForm.emergencyContact || ''}
+                        onChange={(e) => setEditForm({ ...editForm, emergencyContact: e.target.value })}
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                      />
+                    </div>
+                  </div>
                 ) : (
-                  appointments.map((apt) => (
-                    <div key={apt.id} className="border rounded-lg p-4">
-                      <div className="flex justify-between">
-                        <div>
-                          <p className="font-semibold">Date: {apt.appointmentDate}</p>
-                          <p className="text-sm text-gray-600">Time: {apt.appointmentTime}</p>
-                          <p className="text-sm text-gray-600">Status: {apt.status}</p>
-                          {apt.notes && <p className="text-sm text-gray-600">Notes: {apt.notes}</p>}
-                        </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-600">Name</p>
+                      <p className="font-medium">{patient.name}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Email</p>
+                      <p className="font-medium">{patient.email}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Phone</p>
+                      <p className="font-medium">{patient.phone || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Address</p>
+                      <p className="font-medium">{patient.address || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Date of Birth</p>
+                      <p className="font-medium">{patient.dateOfBirth || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Blood Group</p>
+                      <p className="font-medium">{patient.bloodGroup || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Emergency Contact</p>
+                      <p className="font-medium">{patient.emergencyContact || 'N/A'}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'appointments' && (
+              <div>
+                <h2 className="text-2xl font-semibold mb-4">Appointments</h2>
+                <div className="mb-6">
+                  <h3 className="text-lg font-medium mb-3">Book New Appointment</h3>
+                  <form onSubmit={handleBookAppointment} className="space-y-4 bg-gray-50 p-4 rounded">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Doctor</label>
+                        <select name="doctorId" required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md">
+                          <option value="">Select Doctor</option>
+                          {doctors.map((doc) => (
+                            <option key={doc.id} value={doc.id}>
+                              {doc.name} - {doc.specialization}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Date</label>
+                        <input type="date" name="appointmentDate" required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Time</label>
+                        <input type="time" name="appointmentTime" required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Notes</label>
+                        <input type="text" name="notes" className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" />
                       </div>
                     </div>
-                  ))
-                )}
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'test-results' && (
-            <div>
-              <h2 className="text-2xl font-semibold mb-4">Test Results</h2>
-              <div className="space-y-4">
-                {testResults.length === 0 ? (
-                  <p className="text-gray-500">No test results found</p>
-                ) : (
-                  testResults.map((test) => (
-                    <div key={test.id} className="border rounded-lg p-4">
-                      <h3 className="font-semibold">{test.testName}</h3>
-                      <p className="text-sm text-gray-600">Date: {test.testDate}</p>
-                      <p className="mt-2">{test.result}</p>
-                      {test.notes && <p className="text-sm text-gray-500 mt-1">Notes: {test.notes}</p>}
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'insurance' && (
-            <div>
-              <h2 className="text-2xl font-semibold mb-4">Insurance Information</h2>
-              <div className="space-y-4">
-                {insurance.length === 0 ? (
-                  <p className="text-gray-500">No insurance information found</p>
-                ) : (
-                  insurance.map((ins) => (
-                    <div key={ins.id} className="border rounded-lg p-4">
-                      <h3 className="font-semibold">{ins.provider}</h3>
-                      <p className="text-sm text-gray-600">Policy Number: {ins.policyNumber}</p>
-                      <p className="text-sm text-gray-600">Coverage: {ins.coverageType}</p>
-                      <p className="text-sm text-gray-600">Expiry: {ins.expiryDate}</p>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'payments' && (
-            <div>
-              <h2 className="text-2xl font-semibold mb-4">Payment History</h2>
-              <div className="space-y-4">
-                {payments.length === 0 ? (
-                  <p className="text-gray-500">No payment records found</p>
-                ) : (
-                  payments.map((payment) => (
-                    <div key={payment.id} className="border rounded-lg p-4">
-                      <div className="flex justify-between">
-                        <div>
-                          <p className="font-semibold">${payment.amount.toFixed(2)}</p>
-                          <p className="text-sm text-gray-600">Date: {payment.paymentDate}</p>
-                          <p className="text-sm text-gray-600">Method: {payment.paymentMethod}</p>
+                    <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+                      Book Appointment
+                    </button>
+                  </form>
+                </div>
+                <div className="space-y-4">
+                  {appointments.length === 0 ? (
+                    <p className="text-gray-500">No appointments found</p>
+                  ) : (
+                    appointments.map((apt) => {
+                      const doctor = doctors.find((d) => d.id === apt.doctorId);
+                      return (
+                        <div key={apt.id} className="border border-gray-200 rounded p-4">
+                          <div className="flex justify-between">
+                            <div>
+                              <p className="font-medium">{doctor?.name || 'Unknown Doctor'}</p>
+                              <p className="text-sm text-gray-600">{doctor?.specialization || ''}</p>
+                              <p className="text-sm">{new Date(apt.appointmentDate).toLocaleDateString()} at {apt.appointmentTime}</p>
+                              <p className="text-sm">Status: <span className={`font-medium ${apt.status === 'COMPLETED' ? 'text-green-600' : 'text-blue-600'}`}>{apt.status}</span></p>
+                            </div>
+                          </div>
+                          {apt.notes && <p className="text-sm text-gray-600 mt-2">Notes: {apt.notes}</p>}
                         </div>
-                        <span className={`px-3 py-1 rounded ${
-                          payment.status === 'PAID' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {payment.status}
-                        </span>
-                      </div>
-                    </div>
-                  ))
-                )}
+                      );
+                    })
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+
+            {activeTab === 'test-results' && (
+              <div>
+                <h2 className="text-2xl font-semibold mb-4">Test Results</h2>
+                <div className="space-y-4">
+                  {testResults.length === 0 ? (
+                    <p className="text-gray-500">No test results found</p>
+                  ) : (
+                    testResults.map((test) => (
+                      <div key={test.id} className="border border-gray-200 rounded p-4">
+                        <div className="flex justify-between">
+                          <div>
+                            <p className="font-medium">{test.testName}</p>
+                            <p className="text-sm text-gray-600">{new Date(test.testDate).toLocaleDateString()}</p>
+                            <p className="text-sm mt-2">Result: <span className="font-medium">{test.result}</span></p>
+                            {test.notes && <p className="text-sm text-gray-600 mt-2">Notes: {test.notes}</p>}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'insurance' && (
+              <div>
+                <h2 className="text-2xl font-semibold mb-4">Insurance</h2>
+                <div className="space-y-4">
+                  {insurance.length === 0 ? (
+                    <p className="text-gray-500">No insurance records found</p>
+                  ) : (
+                    insurance.map((ins) => (
+                      <div key={ins.id} className="border border-gray-200 rounded p-4">
+                        <p className="font-medium">{ins.provider}</p>
+                        <p className="text-sm text-gray-600">Policy: {ins.policyNumber}</p>
+                        <p className="text-sm">Coverage: {ins.coverageType}</p>
+                        <p className="text-sm">Expires: {new Date(ins.expiryDate).toLocaleDateString()}</p>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'payments' && (
+              <div>
+                <h2 className="text-2xl font-semibold mb-4">Payments</h2>
+                <div className="space-y-4">
+                  {payments.length === 0 ? (
+                    <p className="text-gray-500">No payment records found</p>
+                  ) : (
+                    payments.map((pay) => (
+                      <div key={pay.id} className="border border-gray-200 rounded p-4">
+                        <div className="flex justify-between">
+                          <div>
+                            <p className="font-medium">${pay.amount.toFixed(2)}</p>
+                            <p className="text-sm text-gray-600">{new Date(pay.paymentDate).toLocaleDateString()}</p>
+                            <p className="text-sm">Method: {pay.paymentMethod}</p>
+                          </div>
+                          <div>
+                            <span className={`px-3 py-1 rounded text-sm font-medium ${
+                              pay.status === 'COMPLETED' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {pay.status}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

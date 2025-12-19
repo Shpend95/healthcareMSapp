@@ -1,6 +1,7 @@
 package com.mounthospital.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -12,12 +13,15 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotNull
     @Column(name = "patient_id", nullable = false)
     private Long patientId;
 
-    @Column(nullable = false, precision = 10, scale = 2)
+    @NotNull
+    @Column(nullable = false)
     private BigDecimal amount;
 
+    @NotNull
     @Column(name = "payment_date", nullable = false)
     private LocalDate paymentDate;
 
@@ -25,12 +29,12 @@ public class Payment {
     private String paymentMethod;
 
     @Column(nullable = false)
-    private String status;
+    private String status = "PENDING";
 
-    // Constructors
     public Payment() {}
 
-    public Payment(Long patientId, BigDecimal amount, LocalDate paymentDate, String paymentMethod, String status) {
+    public Payment(Long patientId, BigDecimal amount, LocalDate paymentDate, 
+                  String paymentMethod, String status) {
         this.patientId = patientId;
         this.amount = amount;
         this.paymentDate = paymentDate;
@@ -38,7 +42,6 @@ public class Payment {
         this.status = status;
     }
 
-    // Getters and Setters
     public Long getId() {
         return id;
     }

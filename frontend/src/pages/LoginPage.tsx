@@ -7,8 +7,14 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,19 +23,17 @@ const LoginPage: React.FC = () => {
 
     try {
       await login(username, password);
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      const role = user.role?.toLowerCase();
-      navigate(`/${role}`);
+      navigate('/dashboard');
     } catch (err: any) {
-      setError(err.message || 'Login failed');
+      setError(err.message || 'Login failed. Please check your credentials.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-md">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-xl">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Sign in to Mount Hospital
@@ -85,8 +89,8 @@ const LoginPage: React.FC = () => {
           </div>
 
           <div className="text-center">
-            <Link to="/register" className="text-blue-600 hover:text-blue-500 text-sm">
-              Don't have an account? Register
+            <Link to="/register" className="text-blue-600 hover:text-blue-800">
+              Don't have an account? Register here
             </Link>
           </div>
         </form>

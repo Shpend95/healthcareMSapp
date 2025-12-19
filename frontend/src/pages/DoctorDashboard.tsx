@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import Navigation from '../components/Navigation';
 
 interface Appointment {
   id: number;
@@ -14,14 +15,9 @@ interface Appointment {
 
 interface Patient {
   id: number;
-  userId: number;
   name: string;
   email: string;
   phone: string;
-  address: string;
-  dateOfBirth: string;
-  bloodGroup: string;
-  emergencyContact: string;
 }
 
 interface TestResult {
@@ -35,216 +31,211 @@ interface TestResult {
 
 const DoctorDashboard: React.FC = () => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('appointments');
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
+  const [activeTab, setActiveTab] = useState('appointments');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  const [selectedPatientId, setSelectedPatientId] = useState<number | null>(null);
-  const [newTestResult, setNewTestResult] = useState({
+  const [testForm, setTestForm] = useState({
+    patientId: '',
     testName: '',
-    testDate: '',
+    testDate: new Date().toISOString().split('T')[0],
     result: '',
     notes: '',
   });
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [user]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      // For demo, assume doctorId = 1 (in real app, get from user profile)
-      const doctorId = 1;
-      
       const [apptsRes, patientsRes] = await Promise.all([
-        api.get(`/appointments/doctor/${doctorId}`),
+        api.get('/appointments'),
         api.get('/patients'),
       ]);
 
-      setAppointments(apptsRes.data || []);
-      setPatients(patientsRes.data || []);
-    } catch (err: any) {
-      setError('Failed to load data');
+      const allAppointments = apptsRes.data;
+      // Show all appointments - in a real system, you'd filter by doctor's ID
+      setAppointments(allAppointments);
+      setPatients(patientsRes.data);
+    } catch (error) {
+      console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAddTestResult = async () => {
-    if (!selectedPatientId) {
-      setError('Please select a patient');
-      return;
-    }
+  const handleAddTestResult = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
       await api.post('/test-results', {
-        patientId: selectedPatientId,
-        testName: newTestResult.testName,
-        testDate: newTestResult.testDate,
-        result: newTestResult.result,
-        notes: newTestResult.notes,
+        ...testForm,
+        patientId: parseInt(testForm.patientId),
       });
-      setNewTestResult({ testName: '', testDate: '', result: '', notes: '' });
-      setSelectedPatientId(null);
-      setError('');
-      alert('Test result added successfully');
-    } catch (err: any) {
-      setError('Failed to add test result');
+      alert('Test result added successfully!');
+      setTestForm({
+        patientId: '',
+        testName: '',
+        testDate: new Date().toISOString().split('T')[0],
+        result: '',
+        notes: '',
+      });
+    } catch (error) {
+      alert('Failed to add test result');
     }
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Loading...</div>
+      <div className="min-h-screen bg-gray-100">
+        <Navigation />
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">Loading...</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">Doctor Dashboard</h1>
+    <div className="min-h-screen bg-gray-100">
+      <Navigation />
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold mb-6">Doctor Dashboard</h1>
 
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
-        </div>
-      )}
-
-      <div className="bg-white shadow rounded-lg">
-        <div className="border-b border-gray-200">
-          <nav className="flex -mb-px">
-            {['appointments', 'patients', 'add-test-result'].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`py-4 px-6 text-sm font-medium ${
-                  activeTab === tab
-                    ? 'border-b-2 border-blue-500 text-blue-600'
-                    : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                {tab.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-              </button>
-            ))}
-          </nav>
-        </div>
-
-        <div className="p-6">
-          {activeTab === 'appointments' && (
-            <div>
-              <h2 className="text-2xl font-semibold mb-4">My Appointments</h2>
-              <div className="space-y-4">
-                {appointments.length === 0 ? (
-                  <p className="text-gray-500">No appointments found</p>
-                ) : (
-                  appointments.map((apt) => {
-                    const patient = patients.find(p => p.id === apt.patientId);
-                    return (
-                      <div key={apt.id} className="border rounded-lg p-4">
-                        <div className="flex justify-between">
-                          <div>
-                            <p className="font-semibold">Patient: {patient?.name || 'Unknown'}</p>
-                            <p className="text-sm text-gray-600">Date: {apt.appointmentDate}</p>
-                            <p className="text-sm text-gray-600">Time: {apt.appointmentTime}</p>
-                            <p className="text-sm text-gray-600">Status: {apt.status}</p>
-                            {apt.notes && <p className="text-sm text-gray-600">Notes: {apt.notes}</p>}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'patients' && (
-            <div>
-              <h2 className="text-2xl font-semibold mb-4">All Patients</h2>
-              <div className="space-y-4">
-                {patients.length === 0 ? (
-                  <p className="text-gray-500">No patients found</p>
-                ) : (
-                  patients.map((patient) => (
-                    <div key={patient.id} className="border rounded-lg p-4">
-                      <h3 className="font-semibold">{patient.name}</h3>
-                      <p className="text-sm text-gray-600">Email: {patient.email}</p>
-                      <p className="text-sm text-gray-600">Phone: {patient.phone}</p>
-                      <p className="text-sm text-gray-600">Blood Group: {patient.bloodGroup}</p>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'add-test-result' && (
-            <div>
-              <h2 className="text-2xl font-semibold mb-4">Add Test Result</h2>
-              <div className="space-y-4 max-w-2xl">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Patient</label>
-                  <select
-                    value={selectedPatientId || ''}
-                    onChange={(e) => setSelectedPatientId(parseInt(e.target.value))}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                  >
-                    <option value="">Select Patient</option>
-                    {patients.map((patient) => (
-                      <option key={patient.id} value={patient.id}>
-                        {patient.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Test Name</label>
-                  <input
-                    type="text"
-                    value={newTestResult.testName}
-                    onChange={(e) => setNewTestResult({ ...newTestResult, testName: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Test Date</label>
-                  <input
-                    type="date"
-                    value={newTestResult.testDate}
-                    onChange={(e) => setNewTestResult({ ...newTestResult, testDate: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Result</label>
-                  <textarea
-                    value={newTestResult.result}
-                    onChange={(e) => setNewTestResult({ ...newTestResult, result: e.target.value })}
-                    rows={4}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Notes</label>
-                  <textarea
-                    value={newTestResult.notes}
-                    onChange={(e) => setNewTestResult({ ...newTestResult, notes: e.target.value })}
-                    rows={3}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                  />
-                </div>
+        <div className="bg-white rounded-lg shadow-md mb-6">
+          <div className="border-b border-gray-200">
+            <nav className="flex -mb-px">
+              {['appointments', 'patients', 'add-test'].map((tab) => (
                 <button
-                  onClick={handleAddTestResult}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-6 py-3 font-medium text-sm ${
+                    activeTab === tab
+                      ? 'border-b-2 border-blue-500 text-blue-600'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
                 >
-                  Add Test Result
+                  {tab.charAt(0).toUpperCase() + tab.slice(1).replace('-', ' ')}
                 </button>
+              ))}
+            </nav>
+          </div>
+
+          <div className="p-6">
+            {activeTab === 'appointments' && (
+              <div>
+                <h2 className="text-2xl font-semibold mb-4">Appointments</h2>
+                <div className="space-y-4">
+                  {appointments.length === 0 ? (
+                    <p className="text-gray-500">No appointments found</p>
+                  ) : (
+                    appointments.map((apt) => {
+                      const patient = patients.find((p) => p.id === apt.patientId);
+                      return (
+                        <div key={apt.id} className="border border-gray-200 rounded p-4">
+                          <div className="flex justify-between">
+                            <div>
+                              <p className="font-medium">{patient?.name || 'Unknown Patient'}</p>
+                              <p className="text-sm text-gray-600">{patient?.email || ''}</p>
+                              <p className="text-sm">{new Date(apt.appointmentDate).toLocaleDateString()} at {apt.appointmentTime}</p>
+                              <p className="text-sm">Status: <span className={`font-medium ${apt.status === 'COMPLETED' ? 'text-green-600' : 'text-blue-600'}`}>{apt.status}</span></p>
+                            </div>
+                          </div>
+                          {apt.notes && <p className="text-sm text-gray-600 mt-2">Notes: {apt.notes}</p>}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+
+            {activeTab === 'patients' && (
+              <div>
+                <h2 className="text-2xl font-semibold mb-4">Patients</h2>
+                <div className="space-y-4">
+                  {patients.length === 0 ? (
+                    <p className="text-gray-500">No patients found</p>
+                  ) : (
+                    patients.map((patient) => (
+                      <div key={patient.id} className="border border-gray-200 rounded p-4">
+                        <p className="font-medium">{patient.name}</p>
+                        <p className="text-sm text-gray-600">{patient.email}</p>
+                        <p className="text-sm">{patient.phone || 'N/A'}</p>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'add-test' && (
+              <div>
+                <h2 className="text-2xl font-semibold mb-4">Add Test Result</h2>
+                <form onSubmit={handleAddTestResult} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Patient</label>
+                    <select
+                      value={testForm.patientId}
+                      onChange={(e) => setTestForm({ ...testForm, patientId: e.target.value })}
+                      required
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                    >
+                      <option value="">Select Patient</option>
+                      {patients.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Test Name</label>
+                    <input
+                      type="text"
+                      value={testForm.testName}
+                      onChange={(e) => setTestForm({ ...testForm, testName: e.target.value })}
+                      required
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Test Date</label>
+                    <input
+                      type="date"
+                      value={testForm.testDate}
+                      onChange={(e) => setTestForm({ ...testForm, testDate: e.target.value })}
+                      required
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Result</label>
+                    <input
+                      type="text"
+                      value={testForm.result}
+                      onChange={(e) => setTestForm({ ...testForm, result: e.target.value })}
+                      required
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Notes</label>
+                    <textarea
+                      value={testForm.notes}
+                      onChange={(e) => setTestForm({ ...testForm, notes: e.target.value })}
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                      rows={3}
+                    />
+                  </div>
+                  <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+                    Add Test Result
+                  </button>
+                </form>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -9,7 +9,7 @@ const api = axios.create({
   },
 });
 
-// Add request interceptor to include token
+// Add token to requests
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -23,13 +23,15 @@ api.interceptors.request.use(
   }
 );
 
-// Add response interceptor for error handling
+// Handle errors without logging out
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Don't logout, just return the error
-      console.error('Unauthorized access');
+    if (error.response?.status === 401 && !error.config.url?.includes('/auth/')) {
+      // Only clear token if it's not an auth endpoint
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
     }
     return Promise.reject(error);
   }

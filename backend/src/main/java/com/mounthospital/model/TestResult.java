@@ -1,6 +1,8 @@
 package com.mounthospital.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
 
@@ -11,22 +13,23 @@ public class TestResult {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotNull
     @Column(name = "patient_id", nullable = false)
     private Long patientId;
 
+    @NotBlank
     @Column(name = "test_name", nullable = false)
     private String testName;
 
+    @NotNull
     @Column(name = "test_date", nullable = false)
     private LocalDate testDate;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(nullable = false)
     private String result;
 
-    @Column(columnDefinition = "TEXT")
     private String notes;
 
-    // Constructors
     public TestResult() {}
 
     public TestResult(Long patientId, String testName, LocalDate testDate, String result, String notes) {
@@ -37,7 +40,6 @@ public class TestResult {
         this.notes = notes;
     }
 
-    // Getters and Setters
     public Long getId() {
         return id;
     }

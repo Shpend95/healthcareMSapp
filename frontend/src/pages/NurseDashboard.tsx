@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import Navigation from '../components/Navigation';
 
 interface Patient {
   id: number;
-  userId: number;
   name: string;
   email: string;
   phone: string;
@@ -14,118 +14,161 @@ interface Patient {
   emergencyContact: string;
 }
 
-interface Appointment {
-  id: number;
-  patientId: number;
-  doctorId: number;
-  appointmentDate: string;
-  appointmentTime: string;
-  status: string;
-  notes: string;
-}
-
 const NurseDashboard: React.FC = () => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('patients');
   const [patients, setPatients] = useState<Patient[]>([]);
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [editForm, setEditForm] = useState<Partial<Patient>>({});
 
   useEffect(() => {
-    fetchData();
+    fetchPatients();
   }, []);
 
-  const fetchData = async () => {
+  const fetchPatients = async () => {
     try {
       setLoading(true);
-      const [patientsRes, apptsRes] = await Promise.all([
-        api.get('/patients'),
-        api.get('/appointments'),
-      ]);
-
-      setPatients(patientsRes.data || []);
-      setAppointments(apptsRes.data || []);
-    } catch (err) {
-      console.error('Failed to load data', err);
+      const res = await api.get('/patients');
+      setPatients(res.data);
+    } catch (error) {
+      console.error('Error fetching patients:', error);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleUpdatePatient = async () => {
+    if (!selectedPatient) return;
+    try {
+      await api.put(`/patients/${selectedPatient.id}`, editForm);
+      alert('Patient record updated successfully!');
+      setSelectedPatient(null);
+      fetchPatients();
+    } catch (error) {
+      alert('Failed to update patient record');
+    }
+  };
+
+  const handleSelectPatient = (patient: Patient) => {
+    setSelectedPatient(patient);
+    setEditForm(patient);
+  };
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Loading...</div>
+      <div className="min-h-screen bg-gray-100">
+        <Navigation />
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">Loading...</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">Nurse Dashboard</h1>
+    <div className="min-h-screen bg-gray-100">
+      <Navigation />
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold mb-6">Nurse Dashboard</h1>
 
-      <div className="bg-white shadow rounded-lg">
-        <div className="border-b border-gray-200">
-          <nav className="flex -mb-px">
-            {['patients', 'appointments'].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`py-4 px-6 text-sm font-medium ${
-                  activeTab === tab
-                    ? 'border-b-2 border-blue-500 text-blue-600'
-                    : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </button>
-            ))}
-          </nav>
-        </div>
-
-        <div className="p-6">
-          {activeTab === 'patients' && (
-            <div>
-              <h2 className="text-2xl font-semibold mb-4">All Patients ({patients.length})</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {patients.map((patient) => (
-                  <div key={patient.id} className="border rounded-lg p-4 hover:shadow-md transition">
-                    <h3 className="font-semibold text-lg">{patient.name}</h3>
-                    <p className="text-sm text-gray-600 mt-2">Email: {patient.email}</p>
-                    <p className="text-sm text-gray-600">Phone: {patient.phone || 'N/A'}</p>
-                    <p className="text-sm text-gray-600">Blood Group: {patient.bloodGroup || 'N/A'}</p>
-                    <p className="text-sm text-gray-600">DOB: {patient.dateOfBirth || 'N/A'}</p>
-                    {patient.emergencyContact && (
-                      <p className="text-sm text-gray-600 mt-2">
-                        Emergency: {patient.emergencyContact}
-                      </p>
-                    )}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-2xl font-semibold mb-4">Patients</h2>
+            <div className="space-y-4 max-h-96 overflow-y-auto">
+              {patients.length === 0 ? (
+                <p className="text-gray-500">No patients found</p>
+              ) : (
+                patients.map((patient) => (
+                  <div
+                    key={patient.id}
+                    onClick={() => handleSelectPatient(patient)}
+                    className={`border rounded p-4 cursor-pointer transition ${
+                      selectedPatient?.id === patient.id
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <p className="font-medium">{patient.name}</p>
+                    <p className="text-sm text-gray-600">{patient.email}</p>
+                    <p className="text-sm">{patient.phone || 'N/A'}</p>
                   </div>
-                ))}
-              </div>
+                ))
+              )}
             </div>
-          )}
+          </div>
 
-          {activeTab === 'appointments' && (
-            <div>
-              <h2 className="text-2xl font-semibold mb-4">All Appointments ({appointments.length})</h2>
+          {selectedPatient && (
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-2xl font-semibold mb-4">Update Patient Record</h2>
               <div className="space-y-4">
-                {appointments.map((apt) => {
-                  const patient = patients.find(p => p.id === apt.patientId);
-                  return (
-                    <div key={apt.id} className="border rounded-lg p-4">
-                      <div className="flex justify-between">
-                        <div>
-                          <p className="font-semibold">Patient: {patient?.name || 'Unknown'}</p>
-                          <p className="text-sm text-gray-600">Date: {apt.appointmentDate}</p>
-                          <p className="text-sm text-gray-600">Time: {apt.appointmentTime}</p>
-                          <p className="text-sm text-gray-600">Status: {apt.status}</p>
-                          {apt.notes && <p className="text-sm text-gray-600 mt-1">Notes: {apt.notes}</p>}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Name</label>
+                  <input
+                    type="text"
+                    value={editForm.name || ''}
+                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Email</label>
+                  <input
+                    type="email"
+                    value={editForm.email || ''}
+                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Phone</label>
+                  <input
+                    type="text"
+                    value={editForm.phone || ''}
+                    onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Address</label>
+                  <input
+                    type="text"
+                    value={editForm.address || ''}
+                    onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Blood Group</label>
+                  <input
+                    type="text"
+                    value={editForm.bloodGroup || ''}
+                    onChange={(e) => setEditForm({ ...editForm, bloodGroup: e.target.value })}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Emergency Contact</label>
+                  <input
+                    type="text"
+                    value={editForm.emergencyContact || ''}
+                    onChange={(e) => setEditForm({ ...editForm, emergencyContact: e.target.value })}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                  />
+                </div>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={handleUpdatePatient}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+                  >
+                    Update Record
+                  </button>
+                  <button
+                    onClick={() => setSelectedPatient(null)}
+                    className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
             </div>
           )}

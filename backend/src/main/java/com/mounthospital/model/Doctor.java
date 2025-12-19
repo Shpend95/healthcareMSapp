@@ -1,6 +1,8 @@
 package com.mounthospital.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 
 @Entity
 @Table(name = "doctors")
@@ -9,19 +11,18 @@ public class Doctor {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank
     @Column(nullable = false)
     private String name;
 
+    @Email
     @Column(nullable = false)
     private String email;
 
-    @Column
     private String phone;
 
-    @Column
     private String specialization;
 
-    // Constructors
     public Doctor() {}
 
     public Doctor(String name, String email, String phone, String specialization) {
@@ -31,7 +32,6 @@ public class Doctor {
         this.specialization = specialization;
     }
 
-    // Getters and Setters
     public Long getId() {
         return id;
     }

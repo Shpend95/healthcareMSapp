@@ -1,6 +1,7 @@
 package com.mounthospital.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -12,25 +13,27 @@ public class Appointment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotNull
     @Column(name = "patient_id", nullable = false)
     private Long patientId;
 
+    @NotNull
     @Column(name = "doctor_id", nullable = false)
     private Long doctorId;
 
+    @NotNull
     @Column(name = "appointment_date", nullable = false)
     private LocalDate appointmentDate;
 
+    @NotNull
     @Column(name = "appointment_time", nullable = false)
     private LocalTime appointmentTime;
 
     @Column(nullable = false)
-    private String status;
+    private String status = "SCHEDULED";
 
-    @Column(columnDefinition = "TEXT")
     private String notes;
 
-    // Constructors
     public Appointment() {}
 
     public Appointment(Long patientId, Long doctorId, LocalDate appointmentDate, 
@@ -43,7 +46,6 @@ public class Appointment {
         this.notes = notes;
     }
 
-    // Getters and Setters
     public Long getId() {
         return id;
     }

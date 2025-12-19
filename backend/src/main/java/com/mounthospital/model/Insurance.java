@@ -1,6 +1,8 @@
 package com.mounthospital.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
 
@@ -11,12 +13,15 @@ public class Insurance {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotNull
     @Column(name = "patient_id", nullable = false)
     private Long patientId;
 
+    @NotBlank
     @Column(nullable = false)
     private String provider;
 
+    @NotBlank
     @Column(name = "policy_number", nullable = false)
     private String policyNumber;
 
@@ -26,10 +31,10 @@ public class Insurance {
     @Column(name = "expiry_date")
     private LocalDate expiryDate;
 
-    // Constructors
     public Insurance() {}
 
-    public Insurance(Long patientId, String provider, String policyNumber, String coverageType, LocalDate expiryDate) {
+    public Insurance(Long patientId, String provider, String policyNumber, 
+                    String coverageType, LocalDate expiryDate) {
         this.patientId = patientId;
         this.provider = provider;
         this.policyNumber = policyNumber;
@@ -37,7 +42,6 @@ public class Insurance {
         this.expiryDate = expiryDate;
     }
 
-    // Getters and Setters
     public Long getId() {
         return id;
     }

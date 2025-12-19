@@ -1,6 +1,11 @@
 package com.mounthospital.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "patients")
@@ -9,23 +14,24 @@ public class Patient {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotNull
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    @NotBlank
     @Column(nullable = false)
     private String name;
 
+    @Email
     @Column(nullable = false)
     private String email;
 
-    @Column
     private String phone;
 
-    @Column
     private String address;
 
     @Column(name = "date_of_birth")
-    private String dateOfBirth;
+    private LocalDate dateOfBirth;
 
     @Column(name = "blood_group")
     private String bloodGroup;
@@ -33,11 +39,10 @@ public class Patient {
     @Column(name = "emergency_contact")
     private String emergencyContact;
 
-    // Constructors
     public Patient() {}
 
     public Patient(Long userId, String name, String email, String phone, String address, 
-                   String dateOfBirth, String bloodGroup, String emergencyContact) {
+                   LocalDate dateOfBirth, String bloodGroup, String emergencyContact) {
         this.userId = userId;
         this.name = name;
         this.email = email;
@@ -48,7 +53,6 @@ public class Patient {
         this.emergencyContact = emergencyContact;
     }
 
-    // Getters and Setters
     public Long getId() {
         return id;
     }
@@ -97,11 +101,11 @@ public class Patient {
         this.address = address;
     }
 
-    public String getDateOfBirth() {
+    public LocalDate getDateOfBirth() {
         return dateOfBirth;
     }
 
-    public void setDateOfBirth(String dateOfBirth) {
+    public void setDateOfBirth(LocalDate dateOfBirth) {
         this.dateOfBirth = dateOfBirth;
     }
 
