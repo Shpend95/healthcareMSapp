@@ -30,6 +30,7 @@ public class DataInitializer {
 
             User admin = new User(
                     "Admin User",
+                    "admin",
                     "admin@mountsinai.com",
                     passwordEncoder.encode("Admin123"),
                     Role.ADMIN
@@ -37,6 +38,7 @@ public class DataInitializer {
 
             User doctor = new User(
                     "Doctor User",
+                    "doctor",
                     "doctor@mountsinai.com",
                     passwordEncoder.encode("Doctor123"),
                     Role.DOCTOR
@@ -44,6 +46,7 @@ public class DataInitializer {
 
             User nurse = new User(
                     "Nurse User",
+                    "nurse",
                     "nurse@mountsinai.com",
                     passwordEncoder.encode("Nurse123"),
                     Role.NURSE
@@ -51,6 +54,7 @@ public class DataInitializer {
 
             User patient = new User(
                     "Patient User",
+                    "patient",
                     "patient@test.com",
                     passwordEncoder.encode("Patient123"),
                     Role.PATIENT
