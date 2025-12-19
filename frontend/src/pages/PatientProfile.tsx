@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth, User } from '../context/AuthContext';
-import { profileService } from '../services/api';
+import { profileService, patientService } from '../services/api';
+import BasicPatientInfoSection from '../components/profile/BasicPatientInfoSection';
 import PersonalInfoSection from '../components/profile/PersonalInfoSection';
 import AddressSection from '../components/profile/AddressSection';
 import InsuranceSection from '../components/profile/InsuranceSection';
@@ -23,31 +24,57 @@ interface Profile {
   [key: string]: any;
 }
 
+interface Patient {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  dateOfBirth: string;
+  address: string;
+  userId: number;
+  [key: string]: any;
+}
+
 const PatientProfile: React.FC = () => {
   const { user } = useAuth();
+  const [patient, setPatient] = useState<Patient | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
   const [activeSection, setActiveSection] = useState<string>('personal');
   const [saveStatus, setSaveStatus] = useState<SaveStatus>({ type: '', message: '' });
 
-  const loadProfile = useCallback(async () => {
+  const loadPatient = useCallback(async () => {
     if (!user || !user.id) {
-      console.log('PatientProfile: No user or user.id, skipping profile load');
+      console.log('PatientProfile: No user or user.id, skipping patient load');
       setLoading(false);
       return;
     }
     
-    console.log('PatientProfile: Loading profile for user ID:', user.id);
+    console.log('PatientProfile: Loading patient for user ID:', user.id);
     try {
       setLoading(true);
-      const response = await profileService.getProfile(user.id);
-      console.log('PatientProfile: Profile data loaded:', response.data);
-      setProfile(response.data);
+      const patientResponse = await patientService.getByUserId(user.id);
+      console.log('PatientProfile: Patient data loaded:', patientResponse.data);
+      const patientData = patientResponse.data;
+      setPatient(patientData);
+      
+      // Now load profile using patient ID
+      try {
+        const profileResponse = await profileService.getProfile(patientData.id);
+        console.log('PatientProfile: Profile data loaded:', profileResponse.data);
+        setProfile(profileResponse.data);
+      } catch (profileErr: any) {
+        // Profile might not exist yet, that's okay
+        console.log('PatientProfile: No profile found, will create on first save');
+        setProfile(null);
+      }
+      
       setError('');
     } catch (err: any) {
-      setError('Failed to load profile. Please try again.');
-      console.error('PatientProfile: Error loading profile:', err);
+      const errorMessage = err.response?.data?.message || 'Failed to load patient record. Please contact support.';
+      setError(errorMessage);
+      console.error('PatientProfile: Error loading patient:', err);
     } finally {
       setLoading(false);
     }
@@ -55,17 +82,18 @@ const PatientProfile: React.FC = () => {
 
   useEffect(() => {
     if (user && user.id) {
-      loadProfile();
+      loadPatient();
     } else {
       setLoading(false);
     }
-  }, [user, loadProfile]);
+  }, [user, loadPatient]);
 
-  const handleSaveSuccess = useCallback((message: string) => {
+  const handleSaveSuccess = useCallback(async (message: string) => {
     setSaveStatus({ type: 'success', message });
     setTimeout(() => setSaveStatus({ type: '', message: '' }), 5000);
-    loadProfile(); // Reload to get updated data
-  }, [loadProfile]);
+    // Reload patient and profile data
+    await loadPatient();
+  }, [loadPatient]);
 
   const handleSaveError = useCallback((message: string) => {
     setSaveStatus({ type: 'error', message });
@@ -73,6 +101,7 @@ const PatientProfile: React.FC = () => {
   }, []);
 
   const sections = [
+    { id: 'basic', label: 'Basic Information', icon: '📋' },
     { id: 'personal', label: 'Personal Information', icon: '👤' },
     { id: 'address', label: 'Addresses', icon: '📍' },
     { id: 'insurance', label: 'Insurance', icon: '🏥' },
@@ -143,19 +172,26 @@ const PatientProfile: React.FC = () => {
         </nav>
 
         <main className="profile-content" data-testid="profile-content">
-          {user && user.id && (
+          {patient && patient.id ? (
             <>
+              {activeSection === 'basic' && (
+                <BasicPatientInfoSection
+                  patient={patient}
+                  onSave={handleSaveSuccess}
+                  onError={handleSaveError}
+                />
+              )}
               {activeSection === 'personal' && (
                 <PersonalInfoSection
-                  patientId={user.id}
-                  profile={profile}
+                  patientId={patient.id}
+                  profile={profile || { ...patient, patientId: patient.id }}
                   onSave={handleSaveSuccess}
                   onError={handleSaveError}
                 />
               )}
               {activeSection === 'address' && (
                 <AddressSection
-                  patientId={user.id}
+                  patientId={patient.id}
                   profile={profile}
                   onSave={handleSaveSuccess}
                   onError={handleSaveError}
@@ -163,7 +199,7 @@ const PatientProfile: React.FC = () => {
               )}
               {activeSection === 'insurance' && (
                 <InsuranceSection
-                  patientId={user.id}
+                  patientId={patient.id}
                   profile={profile}
                   onSave={handleSaveSuccess}
                   onError={handleSaveError}
@@ -171,7 +207,7 @@ const PatientProfile: React.FC = () => {
               )}
               {activeSection === 'picture' && (
                 <ProfilePictureSection
-                  patientId={user.id}
+                  patientId={patient.id}
                   profile={profile}
                   onSave={handleSaveSuccess}
                   onError={handleSaveError}
@@ -179,7 +215,7 @@ const PatientProfile: React.FC = () => {
               )}
               {activeSection === 'payment' && (
                 <PaymentMethodsSection
-                  patientId={user.id}
+                  patientId={patient.id}
                   profile={profile}
                   onSave={handleSaveSuccess}
                   onError={handleSaveError}
@@ -187,7 +223,7 @@ const PatientProfile: React.FC = () => {
               )}
               {activeSection === 'emergency' && (
                 <EmergencyContactsSection
-                  patientId={user.id}
+                  patientId={patient.id}
                   profile={profile}
                   onSave={handleSaveSuccess}
                   onError={handleSaveError}
@@ -195,17 +231,16 @@ const PatientProfile: React.FC = () => {
               )}
               {activeSection === 'preferences' && (
                 <MedicalPreferencesSection
-                  patientId={user.id}
+                  patientId={patient.id}
                   profile={profile}
                   onSave={handleSaveSuccess}
                   onError={handleSaveError}
                 />
               )}
             </>
-          )}
-          {(!user || !user.id) && (
+          ) : (
             <div className="error" role="alert">
-              Please log in to view your profile.
+              {error || 'Please log in to view your profile.'}
             </div>
           )}
         </main>

@@ -88,6 +88,8 @@ export const patientService = {
   register: (patientData: any) => api.post('/patients', patientData),
   getAll: () => api.get('/patients'),
   getById: (id: number) => api.get(`/patients/${id}`),
+  getByUserId: (userId: number) => api.get(`/patients/user/${userId}`),
+  update: (id: number, patientData: any) => api.put(`/patients/${id}`, patientData),
 };
 
 // Doctor APIs

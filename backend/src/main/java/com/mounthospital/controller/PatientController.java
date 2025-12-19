@@ -64,6 +64,85 @@ public class PatientController {
         }
     }
 
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<?> getPatientByUserId(@PathVariable Long userId) {
+        List<Patient> patients = patientRepository.findByUserId(userId);
+        
+        if (patients == null || patients.isEmpty()) {
+            ErrorResponse error = new ErrorResponse(
+                HttpStatus.NOT_FOUND.value(),
+                "Not Found",
+                "Patient record not found for user ID " + userId + ". Please contact support.",
+                "/api/patients/user/" + userId
+            );
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+        }
+        
+        // Return the first patient if multiple exist (should typically be one)
+        Patient firstPatient = patients.get(0);
+        if (firstPatient == null) {
+            ErrorResponse error = new ErrorResponse(
+                HttpStatus.NOT_FOUND.value(),
+                "Not Found",
+                "Patient record not found for user ID " + userId + ". Please contact support.",
+                "/api/patients/user/" + userId
+            );
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+        }
+        return ResponseEntity.ok(firstPatient);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updatePatient(@PathVariable Long id, @Valid @RequestBody Patient patientDetails) {
+        Optional<Patient> patientOptional = patientRepository.findById(id);
+        
+        if (patientOptional.isEmpty()) {
+            ErrorResponse error = new ErrorResponse(
+                HttpStatus.NOT_FOUND.value(),
+                "Not Found",
+                "Patient with ID " + id + " not found",
+                "/api/patients/" + id
+            );
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+        }
+
+        Patient patient = patientOptional.get();
+        
+        // Update fields if provided
+        if (patientDetails.getName() != null) {
+            patient.setName(patientDetails.getName());
+        }
+        if (patientDetails.getEmail() != null) {
+            // Check if email already exists (excluding current patient)
+            Optional<Patient> existingPatientOpt = patientRepository.findByEmail(patientDetails.getEmail());
+            if (existingPatientOpt.isPresent()) {
+                Patient existingPatient = existingPatientOpt.get();
+                if (existingPatient != null && existingPatient.getId() != null && !existingPatient.getId().equals(id)) {
+                    ErrorResponse error = new ErrorResponse(
+                        HttpStatus.BAD_REQUEST.value(),
+                        "Bad Request",
+                        "Email already exists",
+                        "/api/patients/" + id
+                    );
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+                }
+            }
+            patient.setEmail(patientDetails.getEmail());
+        }
+        if (patientDetails.getPhone() != null) {
+            patient.setPhone(patientDetails.getPhone());
+        }
+        if (patientDetails.getDateOfBirth() != null) {
+            patient.setDateOfBirth(patientDetails.getDateOfBirth());
+        }
+        if (patientDetails.getAddress() != null) {
+            patient.setAddress(patientDetails.getAddress());
+        }
+
+        Patient updatedPatient = patientRepository.save(patient);
+        return ResponseEntity.ok(updatedPatient);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
