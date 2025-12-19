@@ -35,7 +35,7 @@ function TestResults() {
   const [sortBy, setSortBy] = useState('date-desc');
   const [selectedResult, setSelectedResult] = useState(null);
 
-  // Find patient by email from logged-in user
+  // Find patient by userId from logged-in user
   useEffect(() => {
     const findPatient = async () => {
       if (urlPatientId) {
@@ -43,18 +43,17 @@ function TestResults() {
         return;
       }
 
-      if (!user?.email) {
+      if (!user?.id) {
         setError('Please log in to view test results');
         setLoading(false);
         return;
       }
 
       try {
-        const patientsResponse = await patientService.getAll();
-        const patients = patientsResponse.data;
-        const patient = patients.find(p => p.email === user.email);
+        const patientResponse = await patientService.getByUserId(user.id);
+        const patient = patientResponse.data;
         
-        if (patient) {
+        if (patient && patient.id) {
           setPatientId(patient.id.toString());
         } else {
           setError('Patient record not found. Please contact support.');

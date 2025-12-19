@@ -22,7 +22,7 @@ function Payment() {
   });
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Find patient by email from logged-in user
+  // Find patient by userId from logged-in user
   useEffect(() => {
     const findPatient = async () => {
       if (urlPatientId) {
@@ -30,18 +30,17 @@ function Payment() {
         return;
       }
 
-      if (!user?.email) {
+      if (!user?.id) {
         setError('Please log in to view payments');
         setLoading(false);
         return;
       }
 
       try {
-        const patientsResponse = await patientService.getAll();
-        const patients = patientsResponse.data;
-        const patient = patients.find(p => p.email === user.email);
+        const patientResponse = await patientService.getByUserId(user.id);
+        const patient = patientResponse.data;
         
-        if (patient) {
+        if (patient && patient.id) {
           setPatientId(patient.id.toString());
           setBillingAddress(patient.address || '');
         } else {
@@ -122,14 +121,31 @@ function Payment() {
     event.preventDefault();
     if (!selectedBill) return;
 
+    if (!patientId) {
+      setError('Patient ID not found');
+      return;
+    }
+
     try {
-      await paymentService.update(selectedBill.id, {
-        ...selectedBill,
-        status: 'COMPLETED',
-        paymentMethod: paymentMethod
-      });
+      // If this is a new payment (no existing bill), create it
+      if (!selectedBill.id) {
+        await paymentService.create({
+          patientId: parseInt(patientId),
+          amount: parseFloat(selectedBill.amount || 0),
+          paymentDate: new Date().toISOString().split('T')[0],
+          paymentMethod: paymentMethod,
+          status: 'COMPLETED'
+        });
+      } else {
+        // Update existing payment
+        await paymentService.update(selectedBill.id, {
+          ...selectedBill,
+          status: 'COMPLETED',
+          paymentMethod: paymentMethod
+        });
+      }
       
-      setSuccessMessage(`Payment of $${parseFloat(selectedBill.amount).toFixed(2)} was successful.`);
+      setSuccessMessage(`Payment of $${parseFloat(selectedBill.amount || selectedBill.amount).toFixed(2)} was successful.`);
       
       // Reload payments
       const paymentsResponse = await paymentService.getByPatientId(patientId);
@@ -176,6 +192,7 @@ function Payment() {
       </div>
 
       {error && <div className="alert error">{error}</div>}
+      {successMessage && <div className="alert success">{successMessage}</div>}
 
       <div className="payment-summary">
         <div className="summary-card">

@@ -303,6 +303,58 @@ public class DataInitializer {
             }
         };
     }
+
+    /**
+     * Ensures that all users with role PATIENT have a corresponding patient record.
+     * Creates patient records for any patient users that don't have one.
+     */
+    @Bean
+    public CommandLineRunner ensureAllPatientsHaveRecords(UserRepository userRepository,
+                                                          PatientRepository patientRepository) {
+        return args -> {
+            List<User> allUsers = userRepository.findAll();
+            int patientsCreated = 0;
+            int patientsUpdated = 0;
+
+            for (User user : allUsers) {
+                if (user.getRole() != Role.PATIENT) {
+                    continue;
+                }
+
+                List<Patient> existingPatients = patientRepository.findByUserId(user.getId());
+                
+                if (existingPatients == null || existingPatients.isEmpty()) {
+                    // Create a patient record for this user
+                    Patient newPatient = new Patient(
+                        user.getName(),
+                        user.getEmail(),
+                        "000-000-0000", // Default phone - user should update
+                        LocalDate.of(1990, 1, 1), // Default DOB - user should update
+                        "Address not provided", // Default address - user should update
+                        user.getId()
+                    );
+                    patientRepository.save(newPatient);
+                    patientsCreated++;
+                    log.info("Created patient record for user ID {} (email: {})", user.getId(), user.getEmail());
+                } else {
+                    // Ensure the patient record has the correct user_id
+                    Patient existingPatient = existingPatients.get(0);
+                    if (existingPatient.getUserId() == null || !existingPatient.getUserId().equals(user.getId())) {
+                        existingPatient.setUserId(user.getId());
+                        patientRepository.save(existingPatient);
+                        patientsUpdated++;
+                        log.info("Updated patient record ID {} to link to user ID {}", existingPatient.getId(), user.getId());
+                    }
+                }
+            }
+
+            if (patientsCreated > 0 || patientsUpdated > 0) {
+                log.info("Patient record verification completed. Created: {}, Updated: {}", patientsCreated, patientsUpdated);
+            } else {
+                log.info("Patient record verification completed. All patient users have corresponding patient records.");
+            }
+        };
+    }
 }
 
 

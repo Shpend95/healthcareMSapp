@@ -27,8 +27,9 @@ function Insurance() {
     expiryDate: '',
   });
   const [successMessage, setSuccessMessage] = useState('');
+  const [editingInsurance, setEditingInsurance] = useState(null);
 
-  // Find patient by email from logged-in user
+  // Find patient by userId from logged-in user
   useEffect(() => {
     const findPatient = async () => {
       if (urlPatientId) {
@@ -36,18 +37,17 @@ function Insurance() {
         return;
       }
 
-      if (!user?.email) {
+      if (!user?.id) {
         setError('Please log in to view insurance');
         setLoading(false);
         return;
       }
 
       try {
-        const patientsResponse = await patientService.getAll();
-        const patients = patientsResponse.data;
-        const patient = patients.find(p => p.email === user.email);
+        const patientResponse = await patientService.getByUserId(user.id);
+        const patient = patientResponse.data;
         
-        if (patient) {
+        if (patient && patient.id) {
           setPatientId(patient.id.toString());
         } else {
           setError('Patient record not found. Please contact support.');
@@ -123,15 +123,27 @@ function Insurance() {
     }
 
     try {
-      await insuranceService.create({
-        patientId: parseInt(patientId),
-        provider: formState.provider,
-        policyNumber: formState.policyNumber,
-        coverageType: formState.coverageType,
-        expiryDate: formState.expiryDate,
-      });
-      
-      setSuccessMessage('Insurance information updated successfully.');
+      if (editingInsurance) {
+        // Update existing insurance
+        await insuranceService.update(editingInsurance.id, {
+          patientId: parseInt(patientId),
+          provider: formState.provider,
+          policyNumber: formState.policyNumber,
+          coverageType: formState.coverageType,
+          expiryDate: formState.expiryDate,
+        });
+        setSuccessMessage('Insurance information updated successfully.');
+      } else {
+        // Create new insurance
+        await insuranceService.create({
+          patientId: parseInt(patientId),
+          provider: formState.provider,
+          policyNumber: formState.policyNumber,
+          coverageType: formState.coverageType,
+          expiryDate: formState.expiryDate,
+        });
+        setSuccessMessage('Insurance information added successfully.');
+      }
       
       // Reload insurance
       const [allInsuranceResponse, currentInsuranceResponse] = await Promise.all([
@@ -142,12 +154,14 @@ function Insurance() {
       setInsuranceList(allInsuranceResponse.data || []);
       setCurrentInsurance(currentInsuranceResponse.data);
       
+      // Reset form
       setFormState({
         provider: 'Aetna',
         policyNumber: '',
         coverageType: 'PPO',
         expiryDate: '',
       });
+      setEditingInsurance(null);
     } catch (err) {
       console.error('Error updating insurance:', err);
       const errorMessage = err.response?.data?.message || 'Failed to update insurance. Please try again.';
@@ -235,8 +249,8 @@ function Insurance() {
         <section className="card insurance-section">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">Add/Update Insurance</p>
-              <h3>Update your coverage</h3>
+              <p className="eyebrow">{editingInsurance ? 'Edit Insurance' : 'Add Insurance'}</p>
+              <h3>{editingInsurance ? 'Edit insurance record' : 'Add new insurance'}</h3>
               <p className="muted">Enter your insurance information.</p>
             </div>
           </div>
@@ -290,8 +304,25 @@ function Insurance() {
 
             <div className="actions-row">
               <button className="btn btn-primary" type="submit">
-                Submit
+                {editingInsurance ? 'Update' : 'Add'} Insurance
               </button>
+              {editingInsurance && (
+                <button 
+                  className="btn btn-secondary" 
+                  type="button"
+                  onClick={() => {
+                    setEditingInsurance(null);
+                    setFormState({
+                      provider: 'Aetna',
+                      policyNumber: '',
+                      coverageType: 'PPO',
+                      expiryDate: '',
+                    });
+                  }}
+                >
+                  Cancel
+                </button>
+              )}
             </div>
           </form>
         </section>
@@ -314,6 +345,7 @@ function Insurance() {
                   <th>Coverage Type</th>
                   <th>Expiry Date</th>
                   <th>Status</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -327,6 +359,48 @@ function Insurance() {
                       <span className={`pill ${new Date(ins.expiryDate) > new Date() ? 'pill-success' : 'pill-warning'}`}>
                         {new Date(ins.expiryDate) > new Date() ? 'Active' : 'Expired'}
                       </span>
+                    </td>
+                    <td>
+                      <button 
+                        className="btn btn-secondary btn-compact" 
+                        onClick={() => {
+                          setEditingInsurance(ins);
+                          setFormState({
+                            provider: ins.provider,
+                            policyNumber: ins.policyNumber,
+                            coverageType: ins.coverageType,
+                            expiryDate: ins.expiryDate,
+                          });
+                          // Scroll to form
+                          document.querySelector('.insurance-section form')?.scrollIntoView({ behavior: 'smooth' });
+                        }}
+                      >
+                        Edit
+                      </button>
+                      <button 
+                        className="btn btn-danger btn-compact" 
+                        onClick={async () => {
+                          if (window.confirm('Are you sure you want to delete this insurance record?')) {
+                            try {
+                              await insuranceService.delete(ins.id);
+                              setSuccessMessage('Insurance record deleted successfully.');
+                              // Reload insurance
+                              const [allInsuranceResponse, currentInsuranceResponse] = await Promise.all([
+                                insuranceService.getByPatientId(patientId),
+                                insuranceService.getCurrentByPatientId(patientId).catch(() => ({ data: null }))
+                              ]);
+                              setInsuranceList(allInsuranceResponse.data || []);
+                              setCurrentInsurance(currentInsuranceResponse.data);
+                            } catch (err) {
+                              const errorMessage = err.response?.data?.message || 'Failed to delete insurance. Please try again.';
+                              setError(errorMessage);
+                            }
+                          }
+                        }}
+                        style={{ marginLeft: '0.5rem' }}
+                      >
+                        Delete
+                      </button>
                     </td>
                   </tr>
                 ))}

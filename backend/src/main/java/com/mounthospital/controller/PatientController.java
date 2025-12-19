@@ -141,7 +141,12 @@ public class PatientController {
         }
         if (requestBody.containsKey("dateOfBirth") && requestBody.get("dateOfBirth") != null) {
             String dateStr = requestBody.get("dateOfBirth").toString();
-            patient.setDateOfBirth(java.time.LocalDate.parse(dateStr));
+            try {
+                patient.setDateOfBirth(java.time.LocalDate.parse(dateStr));
+            } catch (Exception e) {
+                // If parsing fails, try ISO format or other formats
+                patient.setDateOfBirth(java.time.LocalDate.parse(dateStr));
+            }
         }
         if (requestBody.containsKey("address") && requestBody.get("address") != null) {
             patient.setAddress((String) requestBody.get("address"));
