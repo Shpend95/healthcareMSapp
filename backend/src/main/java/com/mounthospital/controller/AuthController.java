@@ -1,40 +1,115 @@
-// In AuthController.java
+package com.mounthospital.controller;
 
-@Autowired
-private PatientRepository patientRepository; // Add this at the top with other @Autowired fields
+import com.mounthospital.dto.LoginRequest;
+import com.mounthospital.dto.RegisterRequest;
+import com.mounthospital.entity.User;
+import com.mounthospital.entity.Patient;
+import com.mounthospital.repository.UserRepository;
+import com.mounthospital.repository.PatientRepository;
+import com.mounthospital.security.JwtService;
+import com.mounthospital.service.UserDetailsService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.*;
 
-// Then modify your register method:
-@PostMapping("/register")
-public ResponseEntity<?> registerUser(@RequestBody SignupRequest signupRequest) {
-    // ... your existing validation code ...
+import javax.validation.Valid;
+import java.util.HashMap;
+import java.util.Map;
 
-    // Create new user account
-    User user = new User(
-            signupRequest.getUsername(),
-            signupRequest.getEmail(),
-            passwordEncoder.encode(signupRequest.getPassword())
-    );
+@RestController
+@RequestMapping("/api/auth")
+@CrossOrigin(origins = "http://localhost:3000")
+public class AuthController {
 
-    Set<String> strRoles = signupRequest.getRoles();
-    Set<Role> roles = new HashSet<>();
+    @Autowired
+    private UserRepository userRepository;
 
-    // ... your existing role assignment code ...
+    @Autowired
+    private PatientRepository patientRepository;
 
-    user.setRoles(roles);
-    userRepository.save(user);
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
-    // **ADD THIS**: Auto-create patient profile if role is PATIENT
-    if (strRoles.contains("patient")) {
-        Patient patient = new Patient();
-        patient.setUser(user);
-        patient.setFirstName(signupRequest.getFirstName() != null ? signupRequest.getFirstName() : "");
-        patient.setLastName(signupRequest.getLastName() != null ? signupRequest.getLastName() : "");
-        patient.setEmail(user.getEmail());
-        patient.setDateOfBirth(signupRequest.getDateOfBirth());
-        patient.setPhone(signupRequest.getPhone() != null ? signupRequest.getPhone() : "");
-        patient.setAddress(signupRequest.getAddress() != null ? signupRequest.getAddress() : "");
-        patientRepository.save(patient);
+    @Autowired
+    private JwtService jwtService;
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private UserDetailsService userDetailsService;
+
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
+        if (userRepository.existsByUsername(request.getUsername())) {
+            return ResponseEntity.badRequest().body("Username already exists");
+        }
+
+        if (userRepository.existsByEmail(request.getEmail())) {
+            return ResponseEntity.badRequest().body("Email already exists");
+        }
+
+        User user = new User();
+        user.setUsername(request.getUsername());
+        user.setEmail(request.getEmail());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setName(request.getName());
+        user.setRole(request.getRole());
+
+        user = userRepository.save(user);
+
+        if (request.getRole() != null && request.getRole().equalsIgnoreCase("PATIENT")) {
+            Patient patient = new Patient();
+            patient.setUser(user);
+            patient.setFirstName(request.getName() != null ? request.getName() : "");
+            patient.setLastName("");
+            patient.setEmail(user.getEmail());
+            patient.setDateOfBirth(null);
+            patient.setPhone("");
+            patient.setAddress("");
+            patientRepository.save(patient);
+        }
+
+        UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUsername());
+        String token = jwtService.generateToken(userDetails);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("token", token);
+        response.put("username", user.getUsername());
+        response.put("role", user.getRole());
+        response.put("message", "User registered successfully!");
+
+        return ResponseEntity.ok(response);
     }
 
-    return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            request.getUsername(),
+                            request.getPassword()
+                    )
+            );
+
+            UserDetails userDetails = userDetailsService.loadUserByUsername(request.getUsername());
+            String token = jwtService.generateToken(userDetails);
+
+            User user = userRepository.findByUsername(request.getUsername())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("token", token);
+            response.put("username", user.getUsername());
+            response.put("role", user.getRole());
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Invalid username or password");
+        }
+    }
 }
