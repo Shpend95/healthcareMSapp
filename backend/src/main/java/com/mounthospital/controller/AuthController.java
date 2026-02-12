@@ -2,21 +2,22 @@ package com.mounthospital.controller;
 
 import com.mounthospital.dto.LoginRequest;
 import com.mounthospital.dto.RegisterRequest;
-import com.mounthospital.entity.User;
-import com.mounthospital.entity.Patient;
+import com.mounthospital.model.User;
+import com.mounthospital.model.Patient;
+import com.mounthospital.model.Role;
 import com.mounthospital.repository.UserRepository;
 import com.mounthospital.repository.PatientRepository;
 import com.mounthospital.security.JwtService;
-import com.mounthospital.service.UserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,7 +25,6 @@ import java.util.Map;
 @RequestMapping("/api/auth")
 @CrossOrigin(origins = "http://localhost:3000")
 public class AuthController {
-
     @Autowired
     private UserRepository userRepository;
 
@@ -62,13 +62,11 @@ public class AuthController {
 
         user = userRepository.save(user);
 
-        if (request.getRole() != null && request.getRole().equalsIgnoreCase("PATIENT")) {
+        if (request.getRole() == Role.PATIENT) {
             Patient patient = new Patient();
-            patient.setUser(user);
-            patient.setFirstName(request.getName() != null ? request.getName() : "");
-            patient.setLastName("");
+            patient.setUserId(user.getId());
+            patient.setName(request.getName());
             patient.setEmail(user.getEmail());
-            patient.setDateOfBirth(null);
             patient.setPhone("");
             patient.setAddress("");
             patientRepository.save(patient);
