@@ -81,7 +81,7 @@ const PatientDashboard: React.FC = () => {
   const fetchPatientData = async () => {
     try {
       setLoading(true);
-      const patientRes = await api.get(`/patients/user/${user?.id}`);
+      const patientRes = await api.get('/patients/profile');
       setPatient(patientRes.data);
       setEditForm(patientRes.data);
 
