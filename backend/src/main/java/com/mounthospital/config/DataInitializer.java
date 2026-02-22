@@ -50,31 +50,31 @@ public class DataInitializer implements CommandLineRunner {
     private void initializeData() {
         // Create Users
         User admin = new User("admin", "admin@mounthospital.com", 
-                             passwordEncoder.encode("admin123"), Role.ADMIN, "Admin User");
+                ("admin123"), Role.ADMIN, "Admin User");
         admin = userRepository.save(admin);
 
         User doctor1 = new User("drjohn", "drjohn@mounthospital.com", 
-                               passwordEncoder.encode("doctor123"), Role.DOCTOR, "Dr. John Smith");
+                               ("doctor123"), Role.DOCTOR, "Dr. John Smith");
         doctor1 = userRepository.save(doctor1);
 
         User doctor2 = new User("drsarah", "drsarah@mounthospital.com", 
-                               passwordEncoder.encode("doctor123"), Role.DOCTOR, "Dr. Sarah Johnson");
+                ("doctor123"), Role.DOCTOR, "Dr. Sarah Johnson");
         doctor2 = userRepository.save(doctor2);
 
         User nurse1 = new User("nurse1", "nurse1@mounthospital.com", 
-                              passwordEncoder.encode("nurse123"), Role.NURSE, "Nurse Emily Brown");
+                              ("nurse123"), Role.NURSE, "Nurse Emily Brown");
         nurse1 = userRepository.save(nurse1);
 
         User patient1 = new User("patient1", "patient1@example.com", 
-                                passwordEncoder.encode("patient123"), Role.PATIENT, "John Doe");
+                                ("patient123"), Role.PATIENT, "John Doe");
         patient1 = userRepository.save(patient1);
 
         User patient2 = new User("patient2", "patient2@example.com", 
-                                passwordEncoder.encode("patient123"), Role.PATIENT, "Jane Smith");
+                               "patient123"), Role.PATIENT, "Jane Smith");
         patient2 = userRepository.save(patient2);
 
         User patient3 = new User("patient3", "patient3@example.com", 
-                                passwordEncoder.encode("patient123"), Role.PATIENT, "Bob Wilson");
+                                ("patient123"), Role.PATIENT, "Bob Wilson");
         patient3 = userRepository.save(patient3);
 
         // Create Doctors
