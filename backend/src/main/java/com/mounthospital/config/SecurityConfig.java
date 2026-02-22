@@ -76,13 +76,14 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
+        // Add your frontend URL here (replace with your actual frontend IP / domain)
         configuration.setAllowedOrigins(Arrays.asList(
                 "http://localhost:3000",
-                "http://54.224.109.3:3000/:3000"
+                "http://54.224.109.3:3000"   // <-- fixed
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
-        configuration.setAllowCredentials(true);
+        configuration.setAllowCredentials(true); // keep if you need cookies / auth headers
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
