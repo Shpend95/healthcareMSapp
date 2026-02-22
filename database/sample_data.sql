@@ -5,11 +5,10 @@ USE mount_hospital;
 
 -- Insert Sample Users (5 users)
 INSERT INTO users (username, password, email, name, role) VALUES
-('admin1', '$2a$10$EIXzWZWzQWzWzQWzWzQWzO', 'admin@mounthospital.com', 'Admin User', 'ADMIN'),
-('doctor1', '$2a$10$EIXzWZWzQWzQWzWzQWzWzO', 'sarah.johnson@mounthospital.com', 'Dr. Sarah Johnson', 'DOCTOR'),
-('doctor2', '$2a$10$EIXzWZWzQWzQWzWzQWzWzO', 'michael.chen@mounthospital.com', 'Dr. Michael Chen', 'DOCTOR'),
-('nurse1', '$2a$10$EIXzWZWzQWzQWzWzQWzWzO', 'lisa.anderson@mounthospital.com', 'Lisa Anderson', 'NURSE'),
-('patient1', '$2a$10$EIXzWZWzQWzQWzWzQWzWzO', 'john.doe@email.com', 'John Doe', 'PATIENT');
+('admin1', 'admin123', 'admin@mounthospital.com', 'Admin User', 'ADMIN'),
+('doctor1', 'doctor123', 'sarah.johnson@mounthospital.com', 'Dr. Sarah Johnson', 'DOCTOR'),
+('nurse1', 'nurse123', 'lisa.anderson@mounthospital.com', 'Lisa Anderson', 'NURSE'),
+('patient1', 'patient123', 'john.doe@email.com', 'John Doe', 'PATIENT');
 
 -- Insert Sample Doctors (5 doctors)
 INSERT INTO doctors (name, specialization, email, phone) VALUES
