@@ -79,7 +79,7 @@ public class SecurityConfig {
         // Add your frontend URL here (replace with your actual frontend IP / domain)
         configuration.setAllowedOrigins(Arrays.asList(
                 "http://localhost:3000",
-                "http://54.224.109.3:3000"   // <-- fixed
+                "http://3.95.253.75:3000" // <-- Update this to your current IP
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
